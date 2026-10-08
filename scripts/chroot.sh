@@ -7,7 +7,7 @@ ROOTFS="${PROJECT_ROOT}/rootfs"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Error: This script must be run with sudo:"
-    echo "  sudo $0"
+    echo "  sudo $0 [command]"
     exit 1
 fi
 
@@ -18,15 +18,25 @@ if [[ ! -e "${ROOTFS}/bin/bash" ]]; then
 fi
 
 if ! mountpoint -q "${ROOTFS}/proc" 2>/dev/null; then
-    echo "Warning: /proc is not mounted in ${ROOTFS}."
-    echo "Mounting virtual filesystems now..."
+    echo "Notice: Virtual filesystems not mounted. Mounting now..."
     "${SCRIPT_DIR}/mount.sh"
 fi
 
-echo "=========================================================="
-echo " Entering Sable Linux CHROOT environment"
-echo " Type 'exit' to leave."
-echo " Remember to run 'sudo ./scripts/mount.sh -u' after exiting."
-echo "=========================================================="
+# Ensure scripts/configure.sh is available in chroot /root/
+if [[ -f "${SCRIPT_DIR}/configure.sh" ]]; then
+    mkdir -p "${ROOTFS}/root"
+    cp "${SCRIPT_DIR}/configure.sh" "${ROOTFS}/root/configure.sh"
+    chmod +x "${ROOTFS}/root/configure.sh"
+fi
 
-chroot "${ROOTFS}" /bin/bash
+if [[ $# -gt 0 ]]; then
+    chroot "${ROOTFS}" "$@"
+else
+    echo "=========================================================="
+    echo " Entering Sable Linux CHROOT environment"
+    echo " To configure the system, you can run: /root/configure.sh"
+    echo " Type 'exit' to leave."
+    echo " Remember to run 'sudo ./scripts/mount.sh -u' after exiting."
+    echo "=========================================================="
+    chroot "${ROOTFS}" /bin/bash
+fi

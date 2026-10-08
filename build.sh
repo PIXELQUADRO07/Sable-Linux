@@ -252,6 +252,12 @@ if ! "${SCRIPTS_DIR}/image.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "
     echo -e "${RED}Image generation failed.${RESET}"
     exit 1
 fi
+
+if [[ -n "${SUDO_USER:-}" && -f "${BUILD_DIR}/sable.img" ]]; then
+    chown "${SUDO_USER}:${SUDO_USER}" "${BUILD_DIR}/sable.img" 2>/dev/null || true
+    chmod 664 "${BUILD_DIR}/sable.img" 2>/dev/null || true
+fi
+
 log_info "Bootable image build/sable.img successfully generated."
 
 # ------------------------------------------------------------------------------

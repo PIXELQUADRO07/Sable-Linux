@@ -100,6 +100,11 @@ mount -t sysfs /sys "${MNT_DIR}/sys"
 chroot "${MNT_DIR}" grub-install --target=i386-pc "${LOOP_DEV}"
 chroot "${MNT_DIR}" update-grub
 
+if [[ -n "${SUDO_USER:-}" && -f "${IMAGE}" ]]; then
+    chown "${SUDO_USER}:${SUDO_USER}" "${IMAGE}" 2>/dev/null || true
+    chmod 664 "${IMAGE}" 2>/dev/null || true
+fi
+
 echo
 echo "=========================================================="
 echo " Bootable disk image created successfully!"

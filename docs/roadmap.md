@@ -61,8 +61,8 @@ Sable non è semplicemente:
 | **6** | **Sable identity** | Personalizzazione `/etc/os-release`, `/etc/hostname`, `/etc/sable` | 🟢 Completato |
 | **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | 🟢 Completato |
 | **8** | **Primo sistema CLI** | Pacchetti essenziali per shell e networking base | 🟢 Completato |
-| **9** | **Kernel** | Installazione `linux-image-amd64` | 🟡 Prossimo passo |
-| **10** | **GRUB** | Configurazione GRUB per BIOS e UEFI | ⬜ Da fare |
+| **9** | **Kernel** | Installazione `linux-image-amd64` | 🟢 Completato |
+| **10** | **GRUB** | Configurazione pacchetti GRUB per BIOS e UEFI | 🟡 In corso |
 | **11** | **Primo boot QEMU** | Creazione disco `sable.img` e test boot su QEMU | ⬜ Da fare |
 | **12** | **Networking** | NetworkManager attivo e configurato | ⬜ Da fare |
 | **13** | **SSH** | Server OpenSSH abilitato per sviluppo | ⬜ Da fare |

@@ -1,0 +1,15 @@
+# ==============================================================================
+# Sable Desktop — Package List (KDE Plasma Profile)
+# ==============================================================================
+# Packages added on top of Sable Base when SABLE_PROFILE="desktop".
+
+# Desktop Environment & Display Manager
+kde-standard
+sddm
+
+# Sound Server & Media Plumbing
+pipewire
+pipewire-audio
+
+# Wayland / Graphics Support
+xwayland

@@ -1,0 +1,36 @@
+# ==============================================================================
+# Sable Base — Package List
+# ==============================================================================
+# Core system packages required for a functional Sable CLI installation.
+# Comments (#) and blank lines are ignored during package processing.
+
+# Init System & Service Manager
+systemd
+systemd-sysv
+
+# Core Utilities & Shell
+bash
+coreutils
+util-linux
+
+# Privilege & User Management
+sudo
+passwd
+
+# Networking
+iproute2
+iputils-ping
+network-manager
+curl
+wget
+ca-certificates
+
+# System Diagnostics & Process Tools
+procps
+psmisc
+less
+nano
+vim-tiny
+
+# System Info Presentation
+fastfetch

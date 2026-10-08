@@ -26,7 +26,6 @@ install_grub_in_chroot() {
 
     apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
         grub-pc \
-        grub-efi-amd64 \
         grub-efi-amd64-bin \
         grub2-common \
         dosfstools

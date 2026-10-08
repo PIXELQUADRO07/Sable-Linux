@@ -56,12 +56,12 @@ Sable non è semplicemente:
 | **2** | **Debian bootstrap** | Bootstrap minimale con `debootstrap` (Debian 13 Trixie) | 🟢 Completato |
 | **3** | **Verifica rootfs** | Controllo filesystem e `/etc/os-release`, `/etc/debian_version` | 🟢 Completato |
 | **3.5** | **Architettura & Configurazione** | SSOT `sable.conf`, liste `.list`, profili base/desktop, branding | 🟢 Completato |
-| **4** | **CHROOT environment** | Setup mount virtuali (`/dev`, `/proc`, `/sys`, `/run`) e DNS | 🟡 In corso |
-| **5** | **Configurazione Debian** | Aggiornamento pacchetti base APT (`export LC_ALL=C`) | ⬜ Da fare |
-| **6** | **Sable identity** | Personalizzazione `/etc/os-release`, `/etc/hostname`, `/etc/sable` | ⬜ Da fare |
-| **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | ⬜ Da fare |
-| **8** | **Primo sistema CLI** | Pacchetti essenziali per shell e networking base | ⬜ Da fare |
-| **9** | **Kernel** | Installazione `linux-image-amd64` | ⬜ Da fare |
+| **4** | **CHROOT environment** | Setup mount virtuali (`/dev`, `/proc`, `/sys`, `/run`) e DNS | 🟢 Completato |
+| **5** | **Configurazione Debian** | Aggiornamento pacchetti base APT (`export LC_ALL=C`) | 🟢 Completato |
+| **6** | **Sable identity** | Personalizzazione `/etc/os-release`, `/etc/hostname`, `/etc/sable` | 🟢 Completato |
+| **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | 🟢 Completato |
+| **8** | **Primo sistema CLI** | Pacchetti essenziali per shell e networking base | 🟢 Completato |
+| **9** | **Kernel** | Installazione `linux-image-amd64` | 🟡 Prossimo passo |
 | **10** | **GRUB** | Configurazione GRUB per BIOS e UEFI | ⬜ Da fare |
 | **11** | **Primo boot QEMU** | Creazione disco `sable.img` e test boot su QEMU | ⬜ Da fare |
 | **12** | **Networking** | NetworkManager attivo e configurato | ⬜ Da fare |

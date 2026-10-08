@@ -34,6 +34,7 @@ if [[ -d "${PROJECT_ROOT}/config" ]]; then
 fi
 
 if [[ $# -gt 0 ]]; then
+    trap '"${SCRIPT_DIR}/mount.sh" -u >/dev/null 2>&1 || true' EXIT
     chroot "${ROOTFS}" "$@"
 else
     echo "=========================================================="

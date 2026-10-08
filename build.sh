@@ -144,7 +144,7 @@ echo -e "${BOLD}Logs:${RESET}           ${BUILD_LOG}"
 CURRENT_STAGE=1
 draw_progress_bar 1 ${TOTAL_STAGES} "Verifying host build dependencies"
 
-REQUIRED_TOOLS=(debootstrap parted mkfs.ext4 losetup truncate blkid)
+REQUIRED_TOOLS=(debootstrap parted mkfs.ext4 losetup truncate blkid rsync)
 MISSING_TOOLS=()
 
 for tool in "${REQUIRED_TOOLS[@]}"; do
@@ -243,6 +243,9 @@ fi
 # ------------------------------------------------------------------------------
 CURRENT_STAGE=6
 draw_progress_bar 6 ${TOTAL_STAGES} "Generating Bootable Raw Image (build/sable.img)"
+
+# Ensure any virtual filesystems on rootfs are unmounted before imaging
+"${SCRIPTS_DIR}/mount.sh" -u >/dev/null 2>&1 || true
 
 log_step "Creating partitioned 4GB raw image, formatting, and installing GRUB..."
 if ! "${SCRIPTS_DIR}/image.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then

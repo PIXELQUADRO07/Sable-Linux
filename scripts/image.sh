@@ -37,7 +37,8 @@ echo "=========================================================="
 
 mkdir -p "${BUILD_DIR}" "${MNT_DIR}"
 
-# 1. Clean up previous mount if present
+# 1. Clean up previous mount if present and unmount rootfs virtual filesystems
+"${PROJECT_ROOT}/scripts/mount.sh" -u >/dev/null 2>&1 || true
 if mountpoint -q "${MNT_DIR}" 2>/dev/null; then
     echo "Unmounting leftover mountpoint ${MNT_DIR}..."
     umount -R "${MNT_DIR}" || true
@@ -75,10 +76,12 @@ mkfs.ext4 -F -L "SABLE_ROOT" "${PART_DEV}"
 PART_UUID="$(blkid -s UUID -o value "${PART_DEV}")"
 echo "Root partition UUID: ${PART_UUID}"
 
-# 6. Copy rootfs contents to image partition
+# 6. Copy rootfs contents to image partition (excluding virtual filesystems)
 echo "Mounting partition and copying rootfs..."
 mount "${PART_DEV}" "${MNT_DIR}"
-cp -a "${ROOTFS}/." "${MNT_DIR}/"
+rsync -aHAX --exclude={'/dev/*','/proc/*','/sys/*','/run/*','/tmp/*','/mnt/*','/media/*'} "${ROOTFS}/" "${MNT_DIR}/"
+mkdir -p "${MNT_DIR}/dev" "${MNT_DIR}/proc" "${MNT_DIR}/sys" "${MNT_DIR}/run" "${MNT_DIR}/tmp" "${MNT_DIR}/mnt" "${MNT_DIR}/media"
+chmod 1777 "${MNT_DIR}/tmp"
 
 # 7. Generate /etc/fstab
 echo "Configuring /etc/fstab..."

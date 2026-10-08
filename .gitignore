@@ -1,0 +1,20 @@
+# Build output
+/build/*
+!/build/.gitkeep
+
+# Root filesystem (generated rootfs)
+/rootfs/*
+!/rootfs/.gitkeep
+
+# ISO output
+/iso/*
+!/iso/.gitkeep
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+
+# Editor & IDE configs
+.vscode/
+.idea/

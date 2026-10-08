@@ -71,7 +71,7 @@ Sable non è semplicemente:
 | **16** | **Branding completo** | Plymouth boot splash, SDDM theme, about screen | ⬜ Da fare |
 | **17** | **Sable packages** | Creazione pacchetti `.deb` dedicati (`sable-base`, `sable-branding`) | ⬜ Da fare |
 | **18** | **Sable tools** | Utility CLI proprie (`sable-info`, `sable-update`, `sable-config`) | ⬜ Da fare |
-| **19** | **Automated build** | Orchestratore `./build.sh` integrato | ⬜ Da fare |
+| **19** | **Automated build** | Orchestratore `./build.sh` integrato | 🟢 Completato |
 | **20** | **Podman build environment** | Containerfile per build riproducibili e isolate | ⬜ Da fare |
 | **21** | **ISO Live** | Generazione ISO avviabile ibrida BIOS/UEFI | ⬜ Da fare |
 | **22** | **Live environment** | Modalità live ("Try Sable" / "Install Sable") | ⬜ Da fare |

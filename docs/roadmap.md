@@ -53,9 +53,9 @@ Sable non è semplicemente:
 |---|---|---|---|
 | **0** | **Definizione progetto** | Configurazione iniziale `config/sable.conf` | 🟢 Completato |
 | **1** | **Repository** | Struttura directory, `.gitignore`, documentazione di base | 🟢 Completato |
-| **2** | **Debian bootstrap** | Bootstrap minimale con `debootstrap` (Debian 13 Trixie) | 🟡 In corso |
-| **3** | **Verifica rootfs** | Controllo filesystem e `/etc/os-release`, `/etc/debian_version` | ⬜ Da fare |
-| **4** | **CHROOT environment** | Setup mount virtuali (`/dev`, `/proc`, `/sys`, `/run`) e DNS | ⬜ Da fare |
+| **2** | **Debian bootstrap** | Bootstrap minimale con `debootstrap` (Debian 13 Trixie) | 🟢 Completato |
+| **3** | **Verifica rootfs** | Controllo filesystem e `/etc/os-release`, `/etc/debian_version` | 🟢 Completato |
+| **4** | **CHROOT environment** | Setup mount virtuali (`/dev`, `/proc`, `/sys`, `/run`) e DNS | 🟡 In corso |
 | **5** | **Configurazione Debian** | Aggiornamento pacchetti base APT (`export LC_ALL=C`) | ⬜ Da fare |
 | **6** | **Sable identity** | Personalizzazione `/etc/os-release`, `/etc/hostname`, `/etc/sable` | ⬜ Da fare |
 | **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | ⬜ Da fare |

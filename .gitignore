@@ -2,9 +2,8 @@
 /build/*
 !/build/.gitkeep
 
-# Root filesystem (generated rootfs)
-/rootfs/*
-!/rootfs/.gitkeep
+# Root filesystem (generated Debian rootfs)
+/rootfs/
 
 # ISO output
 /iso/*

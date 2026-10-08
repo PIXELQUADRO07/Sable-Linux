@@ -11,8 +11,23 @@ IMAGE="${PROJECT_ROOT}/build/sable.img"
 
 if [[ ! -f "${IMAGE}" ]]; then
     echo "Error: Disk image not found at ${IMAGE}"
-    echo "Generate it first with: sudo ./scripts/image.sh"
+    echo "Generate it first with: sudo ./build.sh"
     exit 1
+fi
+
+if [[ ! -w "${IMAGE}" ]]; then
+    echo "Error: Disk image is not writable by current user: ${IMAGE}"
+    echo "Fix permissions by running:"
+    echo "  sudo chown $USER:$USER ${IMAGE}"
+    exit 1
+fi
+
+if ! qemu-system-x86_64 -display help 2>&1 | grep -qE "gtk|sdl"; then
+    echo "=========================================================="
+    echo " Notice: Graphical UI driver (GTK/SDL) missing in QEMU."
+    echo " To see the graphical window, install qemu-ui-gtk:"
+    echo "   sudo dnf install qemu-ui-gtk"
+    echo "=========================================================="
 fi
 
 KVM_OPT=()

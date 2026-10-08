@@ -22,11 +22,15 @@ if ! mountpoint -q "${ROOTFS}/proc" 2>/dev/null; then
     "${SCRIPT_DIR}/mount.sh"
 fi
 
-# Ensure scripts/configure.sh is available in chroot /root/
+# Sync scripts and config into chroot /root/
+mkdir -p "${ROOTFS}/root/config"
 if [[ -f "${SCRIPT_DIR}/configure.sh" ]]; then
-    mkdir -p "${ROOTFS}/root"
     cp "${SCRIPT_DIR}/configure.sh" "${ROOTFS}/root/configure.sh"
     chmod +x "${ROOTFS}/root/configure.sh"
+fi
+
+if [[ -d "${PROJECT_ROOT}/config" ]]; then
+    cp -a "${PROJECT_ROOT}/config/." "${ROOTFS}/root/config/"
 fi
 
 if [[ $# -gt 0 ]]; then
@@ -34,7 +38,7 @@ if [[ $# -gt 0 ]]; then
 else
     echo "=========================================================="
     echo " Entering Sable Linux CHROOT environment"
-    echo " To configure the system, you can run: /root/configure.sh"
+    echo " To configure the system, run: /root/configure.sh"
     echo " Type 'exit' to leave."
     echo " Remember to run 'sudo ./scripts/mount.sh -u' after exiting."
     echo "=========================================================="

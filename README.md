@@ -72,19 +72,33 @@ Sable-linux/
 ├── .gitignore
 ├── config/
 │   ├── sable.conf
-│   ├── packages/
-│   └── system/
+│   ├── base/
+│   │   ├── packages.list
+│   │   ├── services.conf
+│   │   └── system.conf
+│   ├── desktop/
+│   │   ├── packages.list
+│   │   ├── plasma.conf
+│   │   └── defaults.conf
+│   └── branding/
+│       ├── branding.conf
+│       └── assets/
 ├── scripts/
 │   ├── bootstrap.sh
 │   ├── mount.sh
-│   └── chroot.sh
+│   ├── chroot.sh
+│   └── configure.sh
 ├── packages/
-│   └── sable-base/
+│   ├── sable-base/
+│   ├── sable-branding/
+│   └── sable-settings/
 ├── rootfs/
 ├── build/
 ├── iso/
 └── docs/
     ├── architecture.md
+    ├── configuration.md
+    ├── branding.md
     ├── development.md
     └── roadmap.md
 ```
@@ -92,6 +106,8 @@ Sable-linux/
 ## 📖 Documentation
 
 - [Architecture Guide](docs/architecture.md)
+- [Configuration Reference](docs/configuration.md)
+- [Branding Guidelines](docs/branding.md)
 - [Development Workflow](docs/development.md)
 - [Full Development Roadmap](docs/roadmap.md)
 

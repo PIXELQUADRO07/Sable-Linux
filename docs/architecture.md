@@ -1,42 +1,61 @@
-# Sable Linux — Architecture
+# 🏛️ Sable Linux — Architettura di Sistema
 
-## Overview
+## 1. Panoramica
+Sable Linux è una distribuzione GNU/Linux indipendente costruita su base Debian (Trixie), ingegnerizzata con un sistema di build proprio, configurazione modulare, identità visiva distinta e ambiente desktop KDE Plasma.
 
-Sable Linux is a Debian-based Linux distribution designed as an independent operating system project with its own configuration, branding, build tooling and release process.
+---
 
-## Initial goals
+## 2. Architettura a Livelli
 
-* Build a minimal Debian-based root filesystem.
-* Identify the resulting system as Sable Linux.
-* Automate the build process.
-* Produce a bootable x86_64 image.
-* Add a KDE Plasma desktop in a later milestone.
+```text
++-------------------------------------------------------------+
+|                     Sable Applications                       |
+|          (sable-info, sable-update, sable-config)           |
++-------------------------------------------------------------+
+|                     Sable Desktop Profile                   |
+|         (KDE Plasma, SDDM, Wayland, Audio Pipewire)         |
++-------------------------------------------------------------+
+|                      Sable Base Profile                      |
+|       (systemd, NetworkManager, user management, sudo)      |
++-------------------------------------------------------------+
+|                      Debian 13 Upstream                      |
+|          (Linux Kernel, glibc, dpkg, APT, coreutils)        |
++-------------------------------------------------------------+
+```
 
-## Initial technical decisions
+---
 
-* Base distribution: Debian 13 (Trixie)
-* Architecture: amd64
-* Build host: Fedora Linux
-* Initial init system: systemd
-* Package manager: APT
-* Initial release: 0.1.0-dev
+## 3. Separazione dei Profili (Profile Architecture)
 
-## Build architecture
+Sable adotta un'architettura a profili configurabile tramite `SABLE_PROFILE`:
 
-The build host runs the build scripts in an isolated environment.
+1. **Profilo `base` (CLI Minimal):**
+   - Destinato a installazioni server, container o diagnostica.
+   - Fornisce esclusivamente il set fondamentale di pacchetti, networking (`NetworkManager`) e sicurezza.
+   - Nessun server grafico o display manager caricato.
 
-The scripts bootstrap a Debian root filesystem, apply Sable configuration and prepare the system for packaging into a bootable image.
+2. **Profilo `desktop` (KDE Plasma):**
+   - Costruito come estensione pulita del profilo `base`.
+   - Include KDE Plasma standard, display manager SDDM, stack audio Pipewire e integrazione Wayland.
 
-Generated files are kept separate from source code.
+---
 
-## Design principles
+## 4. Spazio dei Nomi del Sistema Installato (`/etc/sable/`)
 
-* Reproducible builds where practical.
-* Minimal dependencies on the build host.
-* Clear separation between source files and generated artifacts.
-* Debian package compatibility.
-* Independent Sable branding and configuration.
+Per rispettare le convenzioni FHS e Debian senza disperdere le informazioni di personalizzazione:
+- **Configurazioni standard Debian/Upstream:** rimangono nei percorsi canonici (`/etc/systemd/`, `/etc/network/`, `/etc/apt/`).
+- **Namespace dedicato Sable (`/etc/sable/`):**
+  - `/etc/sable/release`: Nome della release (`Sable Linux`).
+  - `/etc/sable/version`: Versione semantica (`0.1.0`).
+  - `/etc/sable/codename`: Codename del rilascio (`Nightfall`).
+  - `/etc/sable/build-info`: Timestamp, host di build e profilo compilato.
+  - `/etc/sable/config/`: Snapshot della configurazione di sistema utilizzata durante la build.
 
-## Initial limitations
+---
 
-The first version is a Debian-derived distribution. It does not attempt to replace Debian's kernel, libc, compiler toolchain or package management infrastructure.
+## 5. Separazione tra Build Configuration e System Configuration
+
+- **Build Configuration (`config/` nel repository host):**
+  Definisce *come costruire* il sistema (mirror Debian, suite, architettura, profili da abilitare, pacchetti da scaricare).
+- **System Configuration (`/etc/` e `/etc/sable/` nel rootfs):**
+  Definisce *come si comporta* il sistema a runtime una volta avviato dall'utente (servizi attivi, utenti, hostname, temi).

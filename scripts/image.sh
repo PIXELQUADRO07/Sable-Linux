@@ -19,7 +19,7 @@ if [[ "${EUID}" -ne 0 ]]; then
     exit 1
 fi
 
-if [[ ! -e "${ROOTFS}/boot/vmlinuz"* ]]; then
+if ! find "${ROOTFS}/boot" -maxdepth 1 -name "vmlinuz*" -print -quit 2>/dev/null | grep -q .; then
     echo "Error: Linux kernel not found in ${ROOTFS}/boot."
     echo "Run 'sudo ./scripts/kernel.sh' first."
     exit 1

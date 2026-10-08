@@ -34,5 +34,5 @@ qemu-system-x86_64 \
     -drive file="${IMAGE}",format=raw,index=0,media=disk \
     -net nic,model=virtio \
     -net user \
-    -vga virtio \
+    -vga std \
     "$@"

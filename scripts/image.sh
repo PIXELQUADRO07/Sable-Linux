@@ -7,11 +7,17 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+CONFIG_FILE="${PROJECT_ROOT}/config/sable.conf"
+if [[ -f "${CONFIG_FILE}" ]]; then
+    # shellcheck source=../config/sable.conf
+    source "${CONFIG_FILE}"
+fi
+
 ROOTFS="${PROJECT_ROOT}/rootfs"
 BUILD_DIR="${PROJECT_ROOT}/build"
 IMAGE="${BUILD_DIR}/sable.img"
 MNT_DIR="${BUILD_DIR}/mnt"
-IMAGE_SIZE="4G"
+IMAGE_SIZE="${SABLE_IMAGE_SIZE:-8G}"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Error: This script must be run with sudo:"

@@ -27,7 +27,7 @@ RED="\033[31m"
 DIM="\033[2m"
 
 # Total pipeline stages
-TOTAL_STAGES=6
+TOTAL_STAGES=7
 CURRENT_STAGE=0
 
 # Ensure running as root
@@ -239,15 +239,36 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# Stage 6: Disk Image Generation
+# Stage 6: Desktop Environment (KDE Plasma & SDDM)
 # ------------------------------------------------------------------------------
 CURRENT_STAGE=6
-draw_progress_bar 6 ${TOTAL_STAGES} "Generating Bootable Raw Image (build/sable.img)"
+draw_progress_bar 6 ${TOTAL_STAGES} "Configuring Desktop Environment (${SABLE_PROFILE:-desktop})"
+
+if [[ "${SABLE_PROFILE:-desktop}" == "desktop" ]]; then
+    if [[ -x "${ROOTFS}/usr/bin/sddm" && "${CLEAN_BUILD}" == "false" ]]; then
+        log_info "KDE Plasma and SDDM already installed. Skipping package setup."
+    else
+        log_step "Installing KDE Plasma and SDDM suite..."
+        if ! "${SCRIPTS_DIR}/desktop.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
+            echo -e "${RED}Desktop installation failed.${RESET}"
+            exit 1
+        fi
+        log_info "KDE Plasma and SDDM installed successfully."
+    fi
+else
+    log_info "Profile '${SABLE_PROFILE}' selected: skipping desktop environment installation."
+fi
+
+# ------------------------------------------------------------------------------
+# Stage 7: Disk Image Generation
+# ------------------------------------------------------------------------------
+CURRENT_STAGE=7
+draw_progress_bar 7 ${TOTAL_STAGES} "Generating Bootable Raw Image (build/sable.img)"
 
 # Ensure any virtual filesystems on rootfs are unmounted before imaging
 "${SCRIPTS_DIR}/mount.sh" -u >/dev/null 2>&1 || true
 
-log_step "Creating partitioned 4GB raw image, formatting, and installing GRUB..."
+log_step "Creating partitioned raw image, formatting ext4, and installing GRUB..."
 if ! "${SCRIPTS_DIR}/image.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
     echo -e "${RED}Image generation failed.${RESET}"
     exit 1

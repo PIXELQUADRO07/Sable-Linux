@@ -4,7 +4,7 @@
 
 - **Nome:** Sable Linux
 - **Mascotte:** Lo Zibellino (*Martes zibellina* / Sable) — animale elegante, agile, resistente agli ambienti freddi e severi, simbolo di precisione e dinamicità.
-- **Motif Principale:** Zampa dello zibellino (impronta/paw icon).
+- **Motif Principale:** Zampa dello zibellino (impronta / paw icon).
 - **Codename della v0.1:** *Nightfall* (l'imbrunire, transizione verso tonalità notturne raffinate).
 
 ---
@@ -19,13 +19,17 @@
 
 ---
 
-## 3. Risorse Grafiche e Integrazione
+## 3. Risorse Grafiche Ufficiali Registrate
 
-I file grafici e l'ASCII art sono attualmente in fase di ideazione e disegno da parte dell'autore. Una volta finalizzati, verranno inseriti in:
+Le risorse vettoriali ufficiali e l'arte ASCII sono archiviate in `config/branding/assets/`:
 
-- `config/branding/assets/logo.png` — Logo vettoriale / PNG ad alta risoluzione (Plymouth, SDDM, Installer)
-- `config/branding/assets/paw_icon.svg` — Icona launcher e applicazione
-- `config/branding/assets/ascii_face.txt` — Arte ASCII del volto dello zibellino per `/etc/motd` e `fastfetch`
-- `config/branding/assets/wallpaper/` — Sfondi ufficiali KDE Plasma
+- **Logo Primario (`sable-linux-logo.svg` / `logo.svg`):**
+  Logo completo ad alta risoluzione con la zampa dello zibellino e la dicitura stilizzata `SABLE LINUX`. Ideale per Plymouth boot splash, SDDM display manager, benvenuto nell'installer Calamares e documentazione.
+- **Simbolo Zampa Chiara (`sable-paw-symbol.svg`):**
+  Rappresentazione del simbolo su sfondo bianco/chiaro per contesti cartacei, documentazione chiara o banner chiari.
+- **Simbolo Zampa Scura Invertita (`sable-paw-symbol-inverted.svg`):**
+  Rappresentazione del simbolo su sfondo scuro. Utilizzata come icona applicazione principale, icona launcher di sistema (`/usr/share/icons/hicolor/scalable/apps/sable-logo.svg`) e icona del menu KDE.
+- **ASCII Art Ufficiale (`ascii-paw.txt`):**
+  Disegno ASCII stilizzato dell'impronta dello zibellino utilizzato nel `/etc/motd` all'accesso alla shell e nel banner informativo di `fastfetch` (`/etc/fastfetch/config.jsonc`).
 
-La configurazione delle variabili visive risiede in `config/branding/branding.conf`.
+La configurazione delle variabili visive e dei percorsi risiede in `config/branding/branding.conf`.

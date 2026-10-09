@@ -103,21 +103,72 @@ EOF
 # Copy installed system configuration into /etc/sable/
 cp -a "${CONFIG_DIR}/." /etc/sable/config/ 2>/dev/null || true
 
-echo "--> [Step 6] Configuring Sable MOTD..."
-cat << 'EOF' > /etc/motd
+echo "--> [Step 6] Installing Sable Branding Assets, MOTD & fastfetch..."
+mkdir -p /usr/share/sable/assets
+if [[ -d "${CONFIG_DIR}/branding/assets" ]]; then
+    cp -a "${CONFIG_DIR}/branding/assets/." /usr/share/sable/assets/
+fi
 
-   _____     _     _      
-  / ____|   | |   | |     
- | (___  ___| |__ | | ___ 
-  \___ \/ __| '_ \| |/ _ \
-  ____) \__ \ |_) | |  __/
- |_____/|___/_.__/|_|\___|
+# Install desktop system logos
+mkdir -p /usr/share/icons/hicolor/scalable/apps /usr/share/pixmaps
+if [[ -f "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" ]]; then
+    cp "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" /usr/share/icons/hicolor/scalable/apps/distributor-logo.svg
+    cp "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" /usr/share/icons/hicolor/scalable/apps/sable-logo.svg
+    cp "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" /usr/share/pixmaps/sable-logo.svg
+fi
 
- Sable Linux 0.1.0 "Nightfall"
+# Configure /etc/motd
+if [[ -f "${CONFIG_DIR}/branding/assets/ascii-paw.txt" ]]; then
+    {
+        cat "${CONFIG_DIR}/branding/assets/ascii-paw.txt"
+        echo
+        echo "  ${SABLE_NAME} ${SABLE_VERSION} \"${SABLE_CODENAME}\""
+        echo "  Welcome to Sable Linux."
+        echo
+    } > /etc/motd
+fi
 
- Welcome to Sable.
-
+# Configure fastfetch for all users
+mkdir -p /etc/fastfetch /etc/skel/.config/fastfetch
+cat << 'EOF' > /etc/fastfetch/config.jsonc
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "/usr/share/sable/assets/ascii-paw.txt",
+    "color": {
+      "1": "blue",
+      "2": "cyan"
+    },
+    "width": 38,
+    "padding": {
+      "top": 1,
+      "left": 1,
+      "right": 2
+    }
+  },
+  "modules": [
+    "title",
+    "separator",
+    "os",
+    "host",
+    "kernel",
+    "uptime",
+    "packages",
+    "shell",
+    "display",
+    "de",
+    "wm",
+    "terminal",
+    "cpu",
+    "gpu",
+    "memory",
+    "break",
+    "colors"
+  ]
+}
 EOF
+cp /etc/fastfetch/config.jsonc /etc/skel/.config/fastfetch/config.jsonc
 
 echo "--> [Step 7] Managing Services..."
 if [[ -n "${ENABLED_SERVICES:-}" ]]; then

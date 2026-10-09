@@ -62,13 +62,13 @@ Sable non è semplicemente:
 | **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | 🟢 Completato |
 | **8** | **Primo sistema CLI** | Pacchetti essenziali per shell e networking base | 🟢 Completato |
 | **9** | **Kernel** | Installazione `linux-image-amd64` | 🟢 Completato |
-| **10** | **GRUB** | Configurazione pacchetti GRUB per BIOS e UEFI | 🟡 In corso |
-| **11** | **Primo boot QEMU** | Creazione disco `sable.img` e test boot su QEMU | ⬜ Da fare |
-| **12** | **Networking** | NetworkManager attivo e configurato | ⬜ Da fare |
+| **10** | **GRUB** | Configurazione pacchetti GRUB per BIOS e UEFI | 🟢 Completato |
+| **11** | **Primo boot QEMU** | Creazione disco `sable.img` e test boot su QEMU | 🟢 Completato |
+| **12** | **Networking** | NetworkManager attivo e configurato | 🟢 Completato |
 | **13** | **SSH** | Server OpenSSH abilitato per sviluppo | ⬜ Da fare |
-| **14** | **KDE Plasma** | Installazione `kde-standard` e display manager `sddm` | ⬜ Da fare |
+| **14** | **KDE Plasma** | Installazione `kde-standard` e display manager `sddm` | 🟡 In corso |
 | **15** | **Sable Desktop** | Temi KDE, wallpaper, icone, look & feel | ⬜ Da fare |
-| **16** | **Branding completo** | Plymouth boot splash, SDDM theme, about screen | ⬜ Da fare |
+| **16** | **Branding completo** | Loghi ufficiali SVG, MOTD con ASCII paw, fastfetch | 🟢 Completato |
 | **17** | **Sable packages** | Creazione pacchetti `.deb` dedicati (`sable-base`, `sable-branding`) | ⬜ Da fare |
 | **18** | **Sable tools** | Utility CLI proprie (`sable-info`, `sable-update`, `sable-config`) | ⬜ Da fare |
 | **19** | **Automated build** | Orchestratore `./build.sh` integrato | 🟢 Completato |

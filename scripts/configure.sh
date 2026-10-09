@@ -135,7 +135,7 @@ cat << 'EOF' > /etc/fastfetch/config.jsonc
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": {
     "type": "file",
-    "source": "/usr/share/sable/assets/ascii-paw.txt",
+    "source": "/usr/share/sable/assets/ascii-paw-small.txt",
     "color": {
       "1": "blue",
       "2": "cyan"

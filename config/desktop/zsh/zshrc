@@ -1,0 +1,71 @@
+# ==============================================================================
+# 🐾 Sable Linux — Custom ZSH Environment
+# ==============================================================================
+# Theme: Matrix Dark Green, Live Syntax Highlighting, Git Commit Counter, Clock
+
+# Enable colors and prompt expansion
+autoload -U colors && colors
+setopt PROMPT_SUBST
+
+# Git prompt helper with branch name, dirty flag, and commit counter
+git_prompt_info() {
+    local branch
+    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || return
+    local commits
+    commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+    local dirty=""
+    if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+        dirty="%F{red}*${reset_color}"
+    fi
+    echo "%F{yellow}(%f%F{green}${branch}${dirty}%f %F{magenta}c:${commits}%f%F{yellow})%f "
+}
+
+# Left Prompt: green user@host, cyan path, git info with commit counter
+PROMPT='%F{green}%n@%m%f:%F{cyan}%~%f $(git_prompt_info)%F{green}❯%f '
+
+# Right Prompt: Real-time clock on the right side
+RPROMPT='%F{green}[%*]%f'
+
+# History settings
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+
+# Interactive ASCII Banner on launch
+if [[ -o interactive ]] && [[ -z "${SABLE_BANNER_SHOWN:-}" ]]; then
+    export SABLE_BANNER_SHOWN=1
+    if [[ -f /usr/share/sable/assets/ascii-paw-small.txt ]]; then
+        echo -ne "\033[32m"
+        cat /usr/share/sable/assets/ascii-paw-small.txt
+        echo -e "\033[1;32m  🐾 Sable Linux 0.1.0 Nightfall \033[0m"
+        echo
+    fi
+fi
+
+# Load Debian zsh-syntax-highlighting (live typing animation and validation)
+if [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+    source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets cursor)
+    typeset -A ZSH_HIGHLIGHT_STYLES
+    ZSH_HIGHLIGHT_STYLES[command]='fg=green,bold'
+    ZSH_HIGHLIGHT_STYLES[builtin]='fg=green'
+    ZSH_HIGHLIGHT_STYLES[alias]='fg=cyan,bold'
+    ZSH_HIGHLIGHT_STYLES[function]='fg=green'
+    ZSH_HIGHLIGHT_STYLES[path]='fg=cyan,underline'
+    ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=yellow'
+    ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=yellow'
+fi
+
+# Load Debian zsh-autosuggestions (live autocompletion as you type)
+if [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=244'
+fi
+
+# Handy aliases
+alias ls='ls --color=auto'
+alias ll='ls -la --color=auto'
+alias grep='grep --color=auto'
+alias fastfetch='fastfetch --logo-type file --logo /usr/share/sable/assets/ascii-paw-small.txt'

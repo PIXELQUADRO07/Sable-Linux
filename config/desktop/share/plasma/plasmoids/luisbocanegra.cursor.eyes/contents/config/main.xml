@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="enableDebug" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="pythonExecutable" type="String">
+      <default>python3</default>
+    </entry>
+    <entry name="showCoordinates" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="updatesPerSecond" type="Int">
+      <default>30</default>
+    </entry>
+    <entry name="bgFillPanel" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="eyesCount" type="Int">
+      <default>2</default>
+    </entry>
+    <entry name="eyeSpacing" type="Int">
+      <default>4</default>
+    </entry>
+    <entry name="eyeBorderWidth" type="Int">
+      <default>2</default>
+    </entry>
+    <entry name="eyeScaling" type="Double">
+      <default>1</default>
+    </entry>
+    <entry name="irisSize" type="Double">
+      <default>0.6</default>
+    </entry>
+    <entry name="pupilSize" type="Double">
+      <default>0.4</default>
+    </entry>
+    <entry name="fontSize" type="Int">
+      <default>7</default>
+    </entry>
+    <entry name="eyeColor" type="String">
+      <default>#FAFAFA</default>
+    </entry>
+    <entry name="eyeBorderColor" type="String">
+      <default>#B1B1B1</default>
+    </entry>
+    <entry name="irisColor" type="String">
+      <default></default>
+    </entry>
+    <entry name="pupilColor" type="String">
+      <default>#222222</default>
+    </entry>
+    <entry name="eyeImage" type="String">
+      <default></default>
+    </entry>
+    <entry name="irisImage" type="String">
+      <default></default>
+    </entry>
+    <entry name="theme" type="String">
+      <default>{"name":"QML","dir":"","eye-pixmap":"","pupil-pixmap":""}</default>
+    </entry>
+    <entry name="animationDuration" type="Int">
+      <default>50</default>
+    </entry>
+  </group>
+</kcfg>

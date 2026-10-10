@@ -70,9 +70,9 @@ rm -f "${ROOTFS}/etc/apt/sources.list.d/debian.sources" 2>/dev/null || true
 SECURITY_MIRROR="${DEBIAN_SECURITY_MIRROR:-https://deb.debian.org/debian-security}"
 
 cat << EOF > "${ROOTFS}/etc/apt/sources.list"
-deb ${MIRROR} ${SUITE} main non-free non-free-firmware
-deb ${MIRROR} ${SUITE}-updates main non-free non-free-firmware
-deb ${SECURITY_MIRROR} ${SUITE}-security main non-free non-free-firmware
+deb ${MIRROR} ${SUITE} main contrib non-free non-free-firmware
+deb ${MIRROR} ${SUITE}-updates main contrib non-free non-free-firmware
+deb ${SECURITY_MIRROR} ${SUITE}-security main contrib non-free non-free-firmware
 EOF
 
 echo

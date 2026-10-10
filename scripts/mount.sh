@@ -60,8 +60,14 @@ mount_all() {
     fi
 
     if [[ -f /etc/resolv.conf ]]; then
-        echo "Copying /etc/resolv.conf for DNS resolution..."
-        cp -L /etc/resolv.conf "${ROOTFS}/etc/resolv.conf" 2>/dev/null || cp /etc/resolv.conf "${ROOTFS}/etc/resolv.conf"
+        echo "Configuring DNS for chroot..."
+        if grep -q "127.0.0.53" /etc/resolv.conf 2>/dev/null && [[ -f /run/systemd/resolve/resolv.conf ]]; then
+            cp -L /run/systemd/resolve/resolv.conf "${ROOTFS}/etc/resolv.conf"
+        else
+            cp -L /etc/resolv.conf "${ROOTFS}/etc/resolv.conf" 2>/dev/null || echo "nameserver 8.8.8.8" > "${ROOTFS}/etc/resolv.conf"
+        fi
+    else
+        echo "nameserver 8.8.8.8" > "${ROOTFS}/etc/resolv.conf"
     fi
 
     echo "Filesystems successfully mounted."

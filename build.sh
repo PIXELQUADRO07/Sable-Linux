@@ -192,20 +192,22 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# Stage 3: Sable Configuration & Base Setup
+# Stage 3: Sable Configuration & Base Setup (Incremental Overlay Sync)
 # ------------------------------------------------------------------------------
 CURRENT_STAGE=3
 draw_progress_bar 3 ${TOTAL_STAGES} "Configuring Sable Identity & Base System"
 
-if [[ -f "${ROOTFS}/etc/sable/release" && "${CLEAN_BUILD}" == "false" && "${IMAGE_ONLY}" == "true" ]]; then
-    log_info "Sable identity already configured. Skipping configuration."
+if [[ "${IMAGE_ONLY}" == "true" && -f "${ROOTFS}/etc/sable/release" ]]; then
+    log_info "Image-only requested. Skipping base configuration."
 else
-    log_step "Running configuration and provisioning inside chroot..."
+    log_step "Syncing configuration overlays and running configuration inside chroot..."
+    mkdir -p "${ROOTFS}/root/config"
+    rsync -aHAX "${PROJECT_ROOT}/config/" "${ROOTFS}/root/config/"
     if ! "${SCRIPTS_DIR}/chroot.sh" /root/configure.sh >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
         echo -e "${RED}System configuration failed.${RESET}"
         exit 1
     fi
-    log_info "Sable configuration applied successfully."
+    log_info "Sable configuration and overlays applied successfully."
 fi
 
 # ------------------------------------------------------------------------------

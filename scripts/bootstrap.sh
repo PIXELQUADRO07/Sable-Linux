@@ -67,7 +67,7 @@ debootstrap \
 echo "Configuring clean apt sources.list with non-free-firmware and security..."
 rm -f "${ROOTFS}/etc/apt/sources.list.d/debian.sources" 2>/dev/null || true
 
-SECURITY_MIRROR="${MIRROR%/debian}/debian-security"
+SECURITY_MIRROR="${DEBIAN_SECURITY_MIRROR:-https://deb.debian.org/debian-security}"
 
 cat << EOF > "${ROOTFS}/etc/apt/sources.list"
 deb ${MIRROR} ${SUITE} main non-free-firmware

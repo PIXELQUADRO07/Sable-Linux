@@ -200,6 +200,19 @@ else
     echo "User '${USER_NAME}' already exists."
 fi
 
+echo "--> [Step 9] Generating Locales..."
+if command -v locale-gen >/dev/null 2>&1; then
+    sed -i 's/# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen || true
+    locale-gen || true
+    update-locale LANG="${SABLE_DEFAULT_LOCALE:-en_US.UTF-8}" || true
+fi
+
+echo "--> [Step 10] Finalizing & Cleaning Up Rootfs..."
+apt-get clean || true
+rm -rf /var/lib/apt/lists/* || true
+rm -f /etc/machine-id && touch /etc/machine-id
+rm -rf /root/config /root/configure.sh || true
+
 echo "=========================================================="
 echo " Sable Linux configuration completed successfully!"
 echo "=========================================================="

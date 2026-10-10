@@ -21,9 +21,13 @@ passwd
 iproute2
 iputils-ping
 network-manager
+wpasupplicant
 curl
 wget
 ca-certificates
+firmware-linux
+intel-microcode
+amd64-microcode
 
 # System Diagnostics & Process Tools
 procps
@@ -31,6 +35,10 @@ psmisc
 less
 nano
 vim-tiny
+
+# Locale & Session Support
+locales
+libpam-systemd
 
 # System Info Presentation
 fastfetch

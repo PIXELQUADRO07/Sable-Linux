@@ -39,7 +39,7 @@ echo "=========================================================="
 echo " Launching Sable Linux in QEMU..."
 echo " Memory: 4096MB | Cores: 2"
 echo " Image:  ${IMAGE}"
-echo " Default user: sable (password: sable)"
+echo " Default user: sable (password change required on first login)"
 echo "=========================================================="
 
 qemu-system-x86_64 \

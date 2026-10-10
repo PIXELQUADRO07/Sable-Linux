@@ -163,10 +163,15 @@ log_info "All required host tools are available."
 
 if [[ "${CLEAN_BUILD}" == "true" ]]; then
     log_step "Cleaning previous rootfs and disk image as requested (--clean)..."
-    if mountpoint -q "${ROOTFS}/proc" 2>/dev/null; then
-        "${SCRIPTS_DIR}/mount.sh" -u >> "${BUILD_LOG}" 2>&1 || true
+    "${SCRIPTS_DIR}/mount.sh" -u >> "${BUILD_LOG}" 2>&1 || true
+    if findmnt -R -o TARGET -n "${ROOTFS}" 2>/dev/null | grep -q "^${ROOTFS}"; then
+        echo -e "${RED}Error: Rootfs is still mounted or has active sub-mounts. Aborting clean.${RESET}" | tee -a "${ERROR_LOG}"
+        exit 1
     fi
-    rm -rf "${ROOTFS}" "${BUILD_DIR}/sable.img"
+    if [[ -d "${ROOTFS}" ]]; then
+        rm -rf --one-file-system "${ROOTFS}"
+    fi
+    rm -f "${BUILD_DIR}/sable.img"
 fi
 
 # ------------------------------------------------------------------------------

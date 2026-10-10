@@ -164,8 +164,8 @@ log_info "All required host tools are available."
 if [[ "${CLEAN_BUILD}" == "true" ]]; then
     log_step "Cleaning previous rootfs and disk image as requested (--clean)..."
     "${SCRIPTS_DIR}/mount.sh" -u >> "${BUILD_LOG}" 2>&1 || true
-    if findmnt -R -o TARGET -n "${ROOTFS}" 2>/dev/null | grep -q "^${ROOTFS}"; then
-        echo -e "${RED}Error: Rootfs is still mounted or has active sub-mounts. Aborting clean.${RESET}" | tee -a "${ERROR_LOG}"
+    if findmnt -rn -o TARGET | grep -q "^${ROOTFS}/"; then
+        echo -e "${RED}Error: Rootfs or sub-mounts still active on host. Aborting clean.${RESET}" | tee -a "${ERROR_LOG}"
         exit 1
     fi
     if [[ -d "${ROOTFS}" ]]; then
@@ -263,6 +263,21 @@ if [[ "${SABLE_PROFILE:-desktop}" == "desktop" ]]; then
 else
     log_info "Profile '${SABLE_PROFILE}' selected: skipping desktop environment installation."
 fi
+
+# ------------------------------------------------------------------------------
+# Final Rootfs Hygiene & Cleanup (Pre-Imaging)
+# ------------------------------------------------------------------------------
+log_step "Performing final rootfs hygiene and cleanup..."
+"${SCRIPTS_DIR}/mount.sh" >> "${BUILD_LOG}" 2>&1 || true
+
+chroot "${ROOTFS}" apt-get clean || true
+rm -rf "${ROOTFS}/var/lib/apt/lists/"* || true
+rm -rf "${ROOTFS}/var/cache/apt/archives/"* || true
+rm -f "${ROOTFS}/etc/machine-id" && touch "${ROOTFS}/etc/machine-id"
+rm -rf "${ROOTFS}/root/config" "${ROOTFS}/root/configure.sh" || true
+rm -f "${ROOTFS}/etc/resolv.conf"
+
+"${SCRIPTS_DIR}/mount.sh" -u >> "${BUILD_LOG}" 2>&1 || true
 
 # ------------------------------------------------------------------------------
 # Stage 7: Disk Image Generation

@@ -234,6 +234,25 @@ fi
 systemctl enable apparmor 2>/dev/null || true
 systemctl enable auditd 2>/dev/null || true
 
+echo "--> [Step 11] Applying Timezone & SSH / Security Policies..."
+TIMEZONE="${SABLE_DEFAULT_TIMEZONE:-UTC}"
+if [[ -f "/usr/share/zoneinfo/${TIMEZONE}" ]]; then
+    ln -sf "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
+    echo "${TIMEZONE}" > /etc/timezone
+fi
+
+if [[ "${SABLE_ENABLE_SSH:-false}" == "true" ]]; then
+    apt-get install -y --no-install-recommends openssh-server || true
+    systemctl enable ssh 2>/dev/null || true
+    if [[ "${SABLE_ALLOW_ROOT_LOGIN:-false}" == "true" ]]; then
+        sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config || true
+    else
+        sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config || true
+    fi
+else
+    systemctl disable ssh 2>/dev/null || true
+fi
+
 echo "=========================================================="
 echo " Sable Linux configuration completed successfully!"
 echo "=========================================================="

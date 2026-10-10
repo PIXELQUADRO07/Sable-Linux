@@ -16,10 +16,17 @@ install_kernel_in_chroot() {
     export DEBIAN_FRONTEND=noninteractive
 
     echo "=========================================================="
-    echo " [Milestone 9] Installing Linux Kernel (linux-image-amd64)"
+    echo " [Cybersecurity/Performance] Installing Liquorix Kernel..."
     echo "=========================================================="
     apt-get update
-    apt-get install -y --no-install-recommends linux-image-amd64 initramfs-tools
+    apt-get install -y --no-install-recommends curl wget gnupg ca-certificates || true
+
+    if curl -s 'https://liquorix.net/install-liquorix.sh' | bash -s -- --yes; then
+        echo "Liquorix kernel installed successfully."
+    else
+        echo "Warning: Liquorix install script failed or offline. Falling back to standard Debian kernel..."
+        apt-get install -y --no-install-recommends linux-image-amd64 initramfs-tools
+    fi
 
     echo
     echo "Kernel successfully installed in /boot:"

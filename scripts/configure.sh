@@ -195,9 +195,11 @@ if ! id "${USER_NAME}" >/dev/null 2>&1; then
     useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
     echo "${USER_NAME}:${USER_NAME}" | chpasswd
     usermod -aG sudo "${USER_NAME}"
-    echo "User '${USER_NAME}' created with password '${USER_NAME}' and sudo privileges."
+    chage -d 0 "${USER_NAME}" || true
+    echo "User '${USER_NAME}' created with sudo privileges (password change required on first login)."
 else
     echo "User '${USER_NAME}' already exists."
+    chage -d 0 "${USER_NAME}" || true
 fi
 
 echo "--> [Step 9] Generating Locales..."
@@ -206,12 +208,6 @@ if command -v locale-gen >/dev/null 2>&1; then
     locale-gen || true
     update-locale LANG="${SABLE_DEFAULT_LOCALE:-en_US.UTF-8}" || true
 fi
-
-echo "--> [Step 10] Finalizing & Cleaning Up Rootfs..."
-apt-get clean || true
-rm -rf /var/lib/apt/lists/* || true
-rm -f /etc/machine-id && touch /etc/machine-id
-rm -rf /root/config /root/configure.sh || true
 
 echo "=========================================================="
 echo " Sable Linux configuration completed successfully!"

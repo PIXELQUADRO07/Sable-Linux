@@ -316,5 +316,5 @@ echo -e "${BOLD}Log File:${RESET}      ${BUILD_LOG}"
 echo
 echo -e "You can now test Sable Linux directly in QEMU:"
 echo -e "  ${BOLD}${CYAN}./scripts/qemu.sh${RESET}"
-echo -e "Default login: ${BOLD}sable${RESET} / password: ${BOLD}sable${RESET}"
+echo -e "Default login: ${BOLD}sable${RESET} (password change required on first login)"
 echo -e "${BOLD}${GREEN}======================================================================${RESET}"

@@ -209,6 +209,31 @@ if command -v locale-gen >/dev/null 2>&1; then
     update-locale LANG="${SABLE_DEFAULT_LOCALE:-en_US.UTF-8}" || true
 fi
 
+echo "--> [Step 10] Applying System Hardening & Cybersecurity Tool Suite..."
+if [[ -f "${CONFIG_DIR}/base/hardening.conf" ]]; then
+    mkdir -p /etc/sysctl.d
+    cp "${CONFIG_DIR}/base/hardening.conf" /etc/sysctl.d/99-sable-hardening.conf
+    chmod 644 /etc/sysctl.d/99-sable-hardening.conf
+fi
+
+PENTEST_PKGS=()
+if [[ -f "${CONFIG_DIR}/tools/packages-pentest.list" ]]; then
+    while IFS= read -r pkg || [[ -n "$pkg" ]]; do
+        pkg="$(echo "$pkg" | sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        if [[ -n "$pkg" ]]; then
+            PENTEST_PKGS+=("$pkg")
+        fi
+    done < "${CONFIG_DIR}/tools/packages-pentest.list"
+fi
+
+if [[ ${#PENTEST_PKGS[@]} -gt 0 ]]; then
+    echo "Installing cybersecurity tool suite: ${PENTEST_PKGS[*]}"
+    apt-get install -y --no-install-recommends "${PENTEST_PKGS[@]}" || true
+fi
+
+systemctl enable apparmor 2>/dev/null || true
+systemctl enable auditd 2>/dev/null || true
+
 echo "=========================================================="
 echo " Sable Linux configuration completed successfully!"
 echo "=========================================================="

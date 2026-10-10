@@ -104,6 +104,7 @@ trap cleanup_on_exit EXIT
 # ------------------------------------------------------------------------------
 CLEAN_BUILD=false
 IMAGE_ONLY=false
+BUILD_ISO=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -113,12 +114,16 @@ for arg in "$@"; do
         --image-only)
             IMAGE_ONLY=true
             ;;
+        --iso)
+            BUILD_ISO=true
+            ;;
         --help|-h)
             echo "Usage: sudo $0 [OPTIONS]"
             echo
             echo "Options:"
             echo "  --clean, --rebuild   Wipe rootfs and rebuild from zero"
             echo "  --image-only         Skip base build and recreate only sable.img"
+            echo "  --iso                Also build bootable hybrid live ISO with Calamares"
             echo "  --help, -h           Show this help message"
             exit 0
             ;;
@@ -303,6 +308,15 @@ fi
 
 log_info "Bootable image build/sable.img successfully generated."
 
+if [[ "${BUILD_ISO}" == "true" ]]; then
+    log_step "Generating Hybrid Live ISO with Calamares..."
+    if ! "${SCRIPTS_DIR}/iso.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
+        echo -e "${RED}Live ISO generation failed.${RESET}"
+        exit 1
+    fi
+    log_info "Hybrid Live ISO successfully generated."
+fi
+
 # ------------------------------------------------------------------------------
 # Build Completed Summary
 # ------------------------------------------------------------------------------
@@ -313,6 +327,11 @@ echo -e "${BOLD}Artifact:${RESET}      ${BUILD_DIR}/sable.img"
 if [[ -f "${BUILD_DIR}/sable.img" ]]; then
     IMAGE_ACTUAL_SIZE="$(du -h "${BUILD_DIR}/sable.img" | cut -f1)"
     echo -e "${BOLD}Image Size:${RESET}    ${IMAGE_ACTUAL_SIZE}"
+fi
+if [[ -f "${BUILD_DIR}"/sable-*.iso ]]; then
+    ISO_PATH="$(ls -t "${BUILD_DIR}"/sable-*.iso | head -n1)"
+    ISO_SIZE="$(du -h "${ISO_PATH}" | cut -f1)"
+    echo -e "${BOLD}Live ISO:${RESET}      ${ISO_PATH} (${ISO_SIZE})"
 fi
 echo -e "${BOLD}Log File:${RESET}      ${BUILD_LOG}"
 echo

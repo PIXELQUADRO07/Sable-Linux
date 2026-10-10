@@ -64,6 +64,13 @@ debootstrap \
     "${ROOTFS}" \
     "${MIRROR}"
 
+echo "Configuring comprehensive apt sources.list with non-free-firmware and security..."
+cat << EOF > "${ROOTFS}/etc/apt/sources.list"
+deb ${MIRROR} ${SUITE} main contrib non-free non-free-firmware
+deb ${MIRROR} ${SUITE}-updates main contrib non-free non-free-firmware
+deb https://deb.debian.org/debian-security ${SUITE}-security main contrib non-free non-free-firmware
+EOF
+
 echo
 echo "=========================================================="
 echo " Bootstrap completed successfully."

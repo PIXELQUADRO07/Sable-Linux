@@ -7,7 +7,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 CONFIG_FILE="${PROJECT_ROOT}/config/sable.conf"
-if [[ -f "${CONFIG_FILE उर्}]" ]]; then
+if [[ -f "${CONFIG_FILE}" ]]; then
     source "${CONFIG_FILE}"
 fi
 

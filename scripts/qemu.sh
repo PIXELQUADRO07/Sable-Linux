@@ -52,6 +52,15 @@ elif [[ -f /usr/share/OVMF/OVMF_CODE.fd ]]; then
     BIOS_OPT=("-drive" "if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd")
 fi
 
+if [[ ${#BIOS_OPT[@]} -eq 0 ]]; then
+    echo "Error: UEFI firmware (OVMF) not found on host."
+    echo "Sable Linux requires UEFI (GPT) to boot."
+    echo "Please install OVMF package on your host system:"
+    echo "  sudo dnf install edk2-ovmf   # on Fedora"
+    echo "  sudo apt install ovmf        # on Debian/Ubuntu"
+    exit 1
+fi
+
 echo "=========================================================="
 echo " Launching Sable Linux in QEMU (GPT + UEFI)..."
 echo " Memory: 4096MB | Cores: 2"

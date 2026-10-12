@@ -227,8 +227,15 @@ if [[ -f "${CONFIG_DIR}/tools/packages-pentest.list" ]]; then
 fi
 
 if [[ ${#PENTEST_PKGS[@]} -gt 0 ]]; then
-    echo "Installing cybersecurity tool suite: ${PENTEST_PKGS[*]}"
-    apt-get install -y --no-install-recommends "${PENTEST_PKGS[@]}" || true
+    echo "Installing cybersecurity tool suite package by package..."
+    for pkg in "${PENTEST_PKGS[@]}"; do
+        if apt-cache show "$pkg" >/dev/null 2>&1; then
+            echo "  Installing $pkg..."
+            apt-get install -y --no-install-recommends "$pkg" || echo "Warning: Failed to install $pkg"
+        else
+            echo "  Skipping missing package: $pkg (not in repository)"
+        fi
+    done
 fi
 
 systemctl enable apparmor 2>/dev/null || true

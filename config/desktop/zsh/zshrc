@@ -39,7 +39,7 @@ if [[ -o interactive ]] && [[ -z "${SABLE_BANNER_SHOWN:-}" ]]; then
     if [[ -f /usr/share/sable/assets/ascii-paw-small.txt ]]; then
         echo -ne "\033[32m"
         cat /usr/share/sable/assets/ascii-paw-small.txt
-        echo -e "\033[1;32m  🐾 Sable Linux 0.1.0 Nightfall \033[0m"
+        echo -e "\033[1;32m  🐾 Sable Linux 0.4.0 Nightfall \033[0m"
         echo
     fi
 fi

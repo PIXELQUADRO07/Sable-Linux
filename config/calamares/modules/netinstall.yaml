@@ -1,0 +1,86 @@
+- name: "Desktop extras"
+  description: "Additional KDE applications kept out of the live squashfs."
+  hidden: false
+  selected: false
+  critical: false
+  packages:
+    - kmail
+    - kontact
+    - korganizer
+    - kaddressbook
+    - libreoffice-writer
+    - libreoffice-calc
+    - libreoffice-impress
+    - gwenview
+    - okular
+    - kdenlive
+    - vlc
+
+- name: "Printing"
+  description: "CUPS printing stack and Plasma print manager."
+  hidden: false
+  selected: false
+  critical: false
+  packages:
+    - cups
+    - cups-client
+    - print-manager
+    - system-config-printer
+
+- name: "Development"
+  description: "Compilers and common development tools."
+  hidden: false
+  selected: false
+  critical: false
+  packages:
+    - build-essential
+    - git
+    - gdb
+    - cmake
+    - pkg-config
+    - python3-venv
+    - python3-pip
+
+- name: "Pentest tools"
+  description: "Optional Debian security-assessment toolkit. Not installed on the live ISO by default."
+  hidden: false
+  selected: false
+  critical: false
+  packages:
+    - nmap
+    - masscan
+    - netcat-openbsd
+    - socat
+    - tcpdump
+    - wireshark
+    - dnsenum
+    - dnsrecon
+    - whois
+    - traceroute
+    - enum4linux
+    - smbclient
+    - cifs-utils
+    - sqlmap
+    - nikto
+    - wfuzz
+    - dirb
+    - gobuster
+    - ffuf
+    - hashcat
+    - john
+    - hydra
+    - medusa
+    - aircrack-ng
+    - kismet
+    - hcxtools
+    - hcxdumptool
+    - mdk4
+    - binwalk
+    - foremost
+    - sleuthkit
+    - autopsy
+    - testdisk
+    - scalpel
+    - git
+    - tmux
+    - vim

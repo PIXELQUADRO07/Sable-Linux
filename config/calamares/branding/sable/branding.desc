@@ -1,0 +1,30 @@
+---
+componentName: sable
+
+strings:
+    productName:         Sable Linux
+    shortProductName:    Sable
+    version:             0.5.0
+    shortVersion:        0.5
+    versionedName:       Sable Linux 0.5.0
+    shortVersionedName:  Sable 0.5
+    bootloaderEntryName: Sable
+    productUrl:          https://github.com/PIXELQUADRO07/Sable-Linux
+    supportUrl:          https://github.com/PIXELQUADRO07/Sable-Linux/issues
+    knownIssuesUrl:      https://github.com/PIXELQUADRO07/Sable-Linux/issues
+    releaseNotesUrl:     https://github.com/PIXELQUADRO07/Sable-Linux
+    donateUrl:           https://github.com/PIXELQUADRO07/Sable-Linux
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "icon.png"
+    productWelcome:      "logo.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            2
+
+style:
+    sidebarBackground:     "#1e1e2e"
+    sidebarText:           "#cdd6f4"
+    sidebarTextSelect:     "#7aa2f7"
+    sidebarTextHighlight:  "#bb9af7"

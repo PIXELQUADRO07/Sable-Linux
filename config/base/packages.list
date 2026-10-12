@@ -36,9 +36,18 @@ less
 nano
 vim-tiny
 
-# Locale & Session Support
+# Locale, keyboard & session support
 locales
+keyboard-configuration
+console-setup
 libpam-systemd
+
+# Hardening extras (always in the base; pentest tools are netinstall-only)
+apparmor
+apparmor-profiles
+auditd
+ufw
+libpam-pwquality
 
 # System Info Presentation
 fastfetch

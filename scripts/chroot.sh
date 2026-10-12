@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-ROOTFS="${PROJECT_ROOT}/rootfs"
+ROOTFS="${SABLE_ROOTFS:-${PROJECT_ROOT}/rootfs}"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Error: This script must be run with sudo:"

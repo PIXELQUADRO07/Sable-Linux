@@ -24,10 +24,14 @@ install_grub_in_chroot() {
     echo "grub-pc grub-pc/install_devices select " | debconf-set-selections || true
     echo "grub-pc grub-pc/install_devices_empty boolean true" | debconf-set-selections || true
 
-    apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-        grub-pc \
+    apt-get install -y --no-install-recommends \
+        -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+        grub-pc-bin \
         grub-efi-amd64-bin \
+        grub-efi-amd64-signed \
+        shim-signed \
         grub2-common \
+        os-prober \
         dosfstools
 
     echo

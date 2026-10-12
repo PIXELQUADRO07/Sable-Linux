@@ -38,36 +38,79 @@ install_desktop_in_chroot() {
             fi
         done < "${DESKTOP_LIST}"
     else
-        PKGS=(kde-standard sddm zsh zsh-autosuggestions zsh-syntax-highlighting pipewire pipewire-audio wireplumber xwayland libgl1-mesa-dri fonts-dejavu-core fonts-noto-core)
+        PKGS=(kde-plasma-desktop sddm plasma-nm dolphin konsole firefox-esr partitionmanager zsh pipewire pipewire-audio wireplumber xwayland libgl1-mesa-dri fonts-dejavu-core fonts-noto-core plymouth)
     fi
 
     echo "--> Updating APT package index..."
     apt-get update
 
-    echo "--> Installing desktop packages: ${PKGS[*]}..."
-    apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "${PKGS[@]}"
+    if [[ -f "${CONFIG_DIR}/desktop/plasma.conf" ]]; then
+        # shellcheck source=/dev/null
+        source "${CONFIG_DIR}/desktop/plasma.conf"
+    fi
+    if [[ -f "${CONFIG_DIR}/desktop/defaults.conf" ]]; then
+        # shellcheck source=/dev/null
+        source "${CONFIG_DIR}/desktop/defaults.conf"
+    fi
+    if [[ -f "${CONFIG_DIR}/sable.conf" ]]; then
+        # shellcheck source=/dev/null
+        source "${CONFIG_DIR}/sable.conf"
+    fi
 
-    echo "--> Enabling SDDM display manager service..."
-    systemctl enable sddm.service || true
+    if [[ "${SABLE_DESKTOP:-kde}" != "kde" ]]; then
+        echo "SABLE_DESKTOP=${SABLE_DESKTOP}: skipping KDE package set."
+        return 0
+    fi
+
+    if [[ "${ENABLE_PRINTING_CUPS:-false}" == "true" ]]; then
+        PKGS+=(cups print-manager)
+    fi
+    if [[ -n "${DEFAULT_BROWSER:-}" ]]; then
+        case " ${PKGS[*]} " in
+            *" ${DEFAULT_BROWSER} "*) ;;
+            *) PKGS+=("${DEFAULT_BROWSER}") ;;
+        esac
+    fi
+
+    echo "--> Installing desktop packages (--no-install-recommends): ${PKGS[*]}..."
+    apt-get install -y --no-install-recommends \
+        -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+        "${PKGS[@]}"
+
+    echo "--> Enabling ${DISPLAY_MANAGER:-sddm} display manager..."
+    if [[ "${ENABLE_SDDM_SERVICE:-true}" == "true" ]]; then
+        systemctl enable sddm.service || true
+    fi
 
     echo "--> Configuring SDDM defaults..."
     mkdir -p /etc/sddm.conf.d
-    cat << 'EOF' > /etc/sddm.conf.d/sable.conf
-[Theme]
-Current=breeze
-
-[Users]
-MaximumUid=60000
-MinimumUid=1000
-EOF
+    {
+        echo "[Theme]"
+        echo "Current=breeze"
+        echo
+        echo "[Users]"
+        echo "MaximumUid=60000"
+        echo "MinimumUid=1000"
+        echo
+        echo "[General]"
+        echo "DisplayServer=x11"
+        if [[ -n "${DEFAULT_SESSION:-}" ]]; then
+            echo
+            echo "[Autologin]"
+            echo "Session=${DEFAULT_SESSION}"
+            if [[ "${AUTOLOGIN:-false}" == "true" ]]; then
+                echo "User=${SABLE_DEFAULT_USER:-sable}"
+            fi
+        fi
+    } > /etc/sddm.conf.d/sable.conf
 
     echo "=========================================================="
     echo " [Milestone 15] Applying Custom Sweet Theme, Candy Icons & ZSH"
     echo "=========================================================="
 
-    # 1. Install system-wide shared assets
-    if [[ -d "${CONFIG_DIR}/desktop/share" ]]; then
-        echo "--> Installing themes, candy-icons, and eye-tracker plasmoid..."
+    # 1. Optional third-party themes (off by default — they bloat the squashfs)
+    if [[ "${SABLE_INSTALL_THIRD_PARTY_THEMES:-false}" == "true" && -d "${CONFIG_DIR}/desktop/share" ]]; then
+        echo "--> Installing optional third-party themes (candy-icons, aurorae, plasmoids)..."
         if [[ -d "${CONFIG_DIR}/desktop/share/color-schemes" ]]; then
             mkdir -p /usr/share/color-schemes
             cp -a "${CONFIG_DIR}/desktop/share/color-schemes/." /usr/share/color-schemes/
@@ -126,7 +169,7 @@ EOF
         if [[ -f "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" ]]; then
             cp "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" /home/sable/.local/share/konsole/
         fi
-        if [[ -d "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" ]]; then
+        if [[ "${SABLE_INSTALL_THIRD_PARTY_THEMES:-false}" == "true" && -d "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" ]]; then
             cp -a "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" /home/sable/.local/share/plasma/plasmoids/
         fi
 

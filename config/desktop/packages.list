@@ -1,11 +1,25 @@
 # ==============================================================================
 # Sable Desktop — Package List (KDE Plasma Profile)
 # ==============================================================================
-# Packages installed on top of Sable Base when SABLE_PROFILE="desktop".
+# Slim Plasma session. Extra KDE/office apps live in Calamares netinstall groups.
+# Use --no-install-recommends in desktop.sh.
 
 # Desktop Environment & Display Manager
-kde-standard
+kde-plasma-desktop
 sddm
+plasma-nm
+kde-config-sddm
+
+# Core Plasma applications (keep the squashfs small)
+dolphin
+konsole
+kate
+ark
+partitionmanager
+firefox-esr
+
+# Bluetooth (ENABLE_BLUETOOTH in defaults.conf)
+bluedevil
 
 # Shell & Terminal Enhancements
 zsh
@@ -15,10 +29,16 @@ zsh-syntax-highlighting
 # Audio & PipeWire Media Plumbing
 pipewire
 pipewire-audio
+pipewire-pulse
 wireplumber
 
-# Graphics, Wayland & Fonts
+# Graphics, Wayland, fonts, installer helpers
 xwayland
+xserver-xorg-core
+xserver-xorg-video-qxl
 libgl1-mesa-dri
+mesa-vulkan-drivers
 fonts-dejavu-core
 fonts-noto-core
+plymouth
+plymouth-themes

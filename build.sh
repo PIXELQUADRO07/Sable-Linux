@@ -26,7 +26,7 @@ CYAN="\033[36m"
 RED="\033[31m"
 DIM="\033[2m"
 
-# Total pipeline stages
+# Total pipeline stages (ISO is the default deliverable; image is optional)
 TOTAL_STAGES=7
 CURRENT_STAGE=0
 
@@ -104,7 +104,8 @@ trap cleanup_on_exit EXIT
 # ------------------------------------------------------------------------------
 CLEAN_BUILD=false
 IMAGE_ONLY=false
-BUILD_ISO=false
+BUILD_ISO="${SABLE_BUILD_ISO:-true}"
+BUILD_IMAGE="${SABLE_BUILD_IMAGE:-false}"
 
 for arg in "$@"; do
     case "$arg" in
@@ -113,22 +114,40 @@ for arg in "$@"; do
             ;;
         --image-only)
             IMAGE_ONLY=true
+            BUILD_IMAGE=true
+            if [[ "${BUILD_ISO}" == "true" && " $* " != *" --iso "* ]]; then
+                BUILD_ISO=false
+            fi
+            ;;
+        --image)
+            BUILD_IMAGE=true
             ;;
         --iso)
             BUILD_ISO=true
             ;;
+        --skip-iso)
+            BUILD_ISO=false
+            ;;
         --help|-h)
             echo "Usage: sudo $0 [OPTIONS]"
             echo
+            echo "The live ISO is the release artifact. sable.img is a development disk."
+            echo
             echo "Options:"
             echo "  --clean, --rebuild   Wipe rootfs and rebuild from zero"
+            echo "  --iso                Build the hybrid live ISO (default)"
+            echo "  --skip-iso           Do not build the ISO"
+            echo "  --image              Also create build/sable.img (GPT+UEFI, development)"
             echo "  --image-only         Skip base build and recreate only sable.img"
-            echo "  --iso                Also build bootable hybrid live ISO with Calamares"
             echo "  --help, -h           Show this help message"
             exit 0
             ;;
     esac
 done
+
+if [[ "${BUILD_IMAGE}" == "true" && "${BUILD_ISO}" == "true" && "${IMAGE_ONLY}" != "true" ]]; then
+    TOTAL_STAGES=8
+fi
 
 echo -e "${BOLD}${CYAN}"
 cat << "EOF"
@@ -139,7 +158,7 @@ cat << "EOF"
  |____/ \__,_|_.__/|_|\___| |_____|_|_| |_|\__,_/_/\_\
 EOF
 echo -e "${RESET}"
-echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.4.0} (${SABLE_CODENAME:-Nightfall})"
+echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.5.0} (${SABLE_CODENAME:-Nightfall})"
 echo -e "${BOLD}Profile:${RESET}        ${SABLE_PROFILE:-desktop} | Arch: ${DEBIAN_ARCH:-amd64} | Suite: ${DEBIAN_SUITE:-trixie}"
 echo -e "${BOLD}Logs:${RESET}           ${BUILD_LOG}"
 
@@ -287,35 +306,37 @@ rm -f "${ROOTFS}/etc/resolv.conf"
 
 "${SCRIPTS_DIR}/mount.sh" -u >> "${BUILD_LOG}" 2>&1 || true
 
-# ------------------------------------------------------------------------------
-# Stage 7: Disk Image Generation
-# ------------------------------------------------------------------------------
-CURRENT_STAGE=7
-draw_progress_bar 7 ${TOTAL_STAGES} "Generating Bootable Raw Image (build/sable.img)"
-
-# Ensure any virtual filesystems on rootfs are unmounted before imaging
+# Ensure any virtual filesystems on rootfs are unmounted before packaging
 "${SCRIPTS_DIR}/mount.sh" -u >/dev/null 2>&1 || true
 
-log_step "Creating partitioned raw image, formatting ext4, and installing GRUB..."
-if ! "${SCRIPTS_DIR}/image.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
-    echo -e "${RED}Image generation failed.${RESET}"
-    exit 1
+if [[ "${BUILD_IMAGE}" == "true" ]]; then
+    CURRENT_STAGE=7
+    draw_progress_bar "${CURRENT_STAGE}" ${TOTAL_STAGES} "Generating development disk image (build/sable.img)"
+    log_step "Creating partitioned raw image, formatting ext4, and installing GRUB..."
+    if ! "${SCRIPTS_DIR}/image.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
+        echo -e "${RED}Image generation failed.${RESET}"
+        exit 1
+    fi
+    if [[ -n "${SUDO_USER:-}" && -f "${BUILD_DIR}/sable.img" ]]; then
+        chown "${SUDO_USER}:${SUDO_USER}" "${BUILD_DIR}/sable.img" 2>/dev/null || true
+        chmod 664 "${BUILD_DIR}/sable.img" 2>/dev/null || true
+    fi
+    log_info "Development image build/sable.img generated (optional artifact)."
 fi
-
-if [[ -n "${SUDO_USER:-}" && -f "${BUILD_DIR}/sable.img" ]]; then
-    chown "${SUDO_USER}:${SUDO_USER}" "${BUILD_DIR}/sable.img" 2>/dev/null || true
-    chmod 664 "${BUILD_DIR}/sable.img" 2>/dev/null || true
-fi
-
-log_info "Bootable image build/sable.img successfully generated."
 
 if [[ "${BUILD_ISO}" == "true" ]]; then
-    log_step "Generating Hybrid Live ISO with Calamares..."
+    CURRENT_STAGE=${TOTAL_STAGES}
+    draw_progress_bar "${CURRENT_STAGE}" ${TOTAL_STAGES} "Generating hybrid live ISO (release artifact)"
+    log_step "Building live overlay, Calamares, squashfs, hybrid ISO..."
     if ! "${SCRIPTS_DIR}/iso.sh" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
         echo -e "${RED}Live ISO generation failed.${RESET}"
         exit 1
     fi
-    log_info "Hybrid Live ISO successfully generated."
+    log_info "Hybrid live ISO generated."
+fi
+
+if [[ "${BUILD_ISO}" != "true" && "${BUILD_IMAGE}" != "true" ]]; then
+    echo -e "${YELLOW}Notice: nothing to package (--skip-iso and no --image). Rootfs is ready.${RESET}"
 fi
 
 # ------------------------------------------------------------------------------
@@ -324,20 +345,21 @@ fi
 echo -e "\n${BOLD}${GREEN}======================================================================${RESET}"
 echo -e "${BOLD}${GREEN} 🎉 SABLE LINUX BUILD COMPLETED SUCCESSFULLY!${RESET}"
 echo -e "${BOLD}${GREEN}======================================================================${RESET}"
-echo -e "${BOLD}Artifact:${RESET}      ${BUILD_DIR}/sable.img"
-if [[ -f "${BUILD_DIR}/sable.img" ]]; then
-    IMAGE_ACTUAL_SIZE="$(du -h "${BUILD_DIR}/sable.img" | cut -f1)"
-    echo -e "${BOLD}Image Size:${RESET}    ${IMAGE_ACTUAL_SIZE}"
-fi
 ISO_FILES=("${BUILD_DIR}"/sable-*.iso)
 if [[ -f "${ISO_FILES[0]:-}" ]]; then
     ISO_PATH="${ISO_FILES[0]}"
     ISO_SIZE="$(du -h "${ISO_PATH}" | cut -f1)"
-    echo -e "${BOLD}Live ISO:${RESET}      ${ISO_PATH} (${ISO_SIZE})"
+    echo -e "${BOLD}Release ISO:${RESET}   ${ISO_PATH} (${ISO_SIZE})"
+fi
+if [[ -f "${BUILD_DIR}/sable.img" ]]; then
+    IMAGE_ACTUAL_SIZE="$(du -h "${BUILD_DIR}/sable.img" | cut -f1)"
+    echo -e "${BOLD}Dev image:${RESET}     ${BUILD_DIR}/sable.img (${IMAGE_ACTUAL_SIZE})"
 fi
 echo -e "${BOLD}Log File:${RESET}      ${BUILD_LOG}"
 echo
-echo -e "You can now test Sable Linux directly in QEMU:"
-echo -e "  ${BOLD}${CYAN}./scripts/qemu.sh${RESET}"
-echo -e "Default login: ${BOLD}sable${RESET} (password change required on first login)"
+echo -e "Test the live ISO (UEFI, serial):"
+echo -e "  ${BOLD}${CYAN}./scripts/qemu.sh --iso --nographic${RESET}"
+echo -e "  ${BOLD}${CYAN}./scripts/qemu.sh --iso --bios${RESET}"
+echo -e "  ${BOLD}${CYAN}./scripts/test-iso.sh${RESET}"
+echo -e "Live login: ${BOLD}live${RESET}  |  Dev image login: ${BOLD}sable${RESET}"
 echo -e "${BOLD}${GREEN}======================================================================${RESET}"

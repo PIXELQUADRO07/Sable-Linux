@@ -4,7 +4,7 @@
 
 # Sable Linux
 
-> An independent Debian-based operating system distribution with a custom build system, identity, branding, package ecosystem, and KDE Plasma desktop environment.
+> An independent Debian-based operating system distribution with a custom build system, identity, branding, package ecosystem, Calamares installer, and KDE Plasma desktop environment.
 
 Sable Linux is designed to offer a clean, curated Linux experience based on Debian while keeping the entire system build process tailored to a unique project structure and workflow.
 
@@ -16,7 +16,8 @@ Sable Linux combines:
 - `systemd` as the init system
 - `APT` as the package manager
 - `KDE Plasma` as the desktop environment
-- a custom build flow for creating ISO and image artifacts
+- `Calamares` as the graphical system installer with optional netinstall groups
+- A staged build pipeline generating hybrid live ISO release artifacts
 
 ## Architecture
 
@@ -37,15 +38,16 @@ Sable Linux combines:
                          │
               ┌──────────┴──────────┐
               │                     │
-            sable.iso            sable.img
+      sable-0.5.0.iso           sable.img
+      (Release Live ISO)         (Dev Disk)
               │                     │
-           QEMU / Virtualized     Hardware
+           QEMU / Hardware       QEMU Dev
 ```
 
 ## Project identity
 
 - Name: `Sable Linux`
-- Version: `0.4.0`
+- Version: `0.5.0`
 - Codename: `Nightfall`
 - Architecture: `amd64`
 - Base: `Debian 13 (Trixie)`
@@ -58,27 +60,46 @@ Sable Linux combines:
 Make sure the required build dependencies are installed on your host system:
 
 ```bash
-sudo dnf install debootstrap   # Fedora
-# or
-sudo apt install debootstrap   # Debian / Ubuntu
+# On Fedora
+sudo dnf install debootstrap squashfs-tools xorriso grub2-tools-extra grub2-pc-modules grub2-efi-x64-modules mtools dosfstools qemu-system-x86 edk2-ovmf
+
+# On Debian / Ubuntu
+sudo apt install debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools qemu-system-x86 ovmf
 ```
 
-### 1. Bootstrap the base system
+### 1. Build the complete system and Hybrid Live ISO
+
+Run the staged build orchestrator:
 
 ```bash
-sudo ./scripts/bootstrap.sh
+sudo ./build.sh --iso
 ```
 
-### 2. Enter the Sable chroot environment
+Command options:
+- `--iso`: Build the hybrid live ISO (`build/sable-0.5.0-live-amd64.iso`, default release artifact).
+- `--image`: Optionally generate the raw development disk image (`build/sable.img`).
+- `--clean`: Wipe rootfs and rebuild from scratch.
+
+### 2. Test in QEMU
+
+Launch the live ISO in QEMU:
+
+```bash
+./scripts/qemu.sh --iso
+```
+
+Or run automated static and ISO smoke tests:
+
+```bash
+bash ./scripts/test-static.sh
+bash ./scripts/test-iso.sh
+```
+
+### 3. Manual chroot access
 
 ```bash
 sudo ./scripts/mount.sh
 sudo ./scripts/chroot.sh
-```
-
-### 3. Clean up mounts
-
-```bash
 sudo ./scripts/mount.sh -u
 ```
 
@@ -89,6 +110,7 @@ Sable-Linux/
 ├── README.md
 ├── LICENSE
 ├── .gitignore
+├── build.sh
 ├── config/
 │   ├── sable.conf
 │   ├── base/
@@ -99,6 +121,11 @@ Sable-Linux/
 │   │   ├── packages.list
 │   │   ├── plasma.conf
 │   │   └── defaults.conf
+│   ├── calamares/
+│   │   ├── settings.conf
+│   │   ├── modules/
+│   │   └── branding/
+│   ├── live/
 │   └── branding/
 │       ├── branding.conf
 │       └── assets/
@@ -106,7 +133,14 @@ Sable-Linux/
 │   ├── bootstrap.sh
 │   ├── mount.sh
 │   ├── chroot.sh
-│   └── configure.sh
+│   ├── configure.sh
+│   ├── desktop.sh
+│   ├── grub.sh
+│   ├── image.sh
+│   ├── iso.sh
+│   ├── qemu.sh
+│   ├── test-static.sh
+│   └── test-iso.sh
 ├── packages/
 │   ├── sable-base/
 │   ├── sable-branding/

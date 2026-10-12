@@ -45,7 +45,7 @@ Sable Linux combines:
 ## Project identity
 
 - Name: `Sable Linux`
-- Version: `0.1.0`
+- Version: `0.4.0`
 - Codename: `Nightfall`
 - Architecture: `amd64`
 - Base: `Debian 13 (Trixie)`

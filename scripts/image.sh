@@ -73,12 +73,7 @@ udevadm settle || sleep 2
 
 cleanup() {
     echo "Cleaning up temporary mounts..."
-    if mountpoint -q "${MNT_DIR}/boot/efi" 2>/dev/null; then umount "${MNT_DIR}/boot/efi" || true; fi
-    if mountpoint -q "${MNT_DIR}/dev" 2>/dev/null; then umount "${MNT_DIR}/dev" || true; fi
-    if mountpoint -q "${MNT_DIR}/proc" 2>/dev/null; then umount "${MNT_DIR}/proc" || true; fi
-    if mountpoint -q "${MNT_DIR}/sys" 2>/dev/null; then umount "${MNT_DIR}/sys" || true; fi
-    if mountpoint -q "${MNT_DIR}/run" 2>/dev/null; then umount "${MNT_DIR}/run" || true; fi
-    if mountpoint -q "${MNT_DIR}" 2>/dev/null; then umount "${MNT_DIR}" || true; fi
+    umount -R "${MNT_DIR}" 2>/dev/null || true
     if [[ -n "${LOOP_DEV:-}" ]]; then losetup -d "${LOOP_DEV}" 2>/dev/null || true; fi
 }
 trap cleanup EXIT

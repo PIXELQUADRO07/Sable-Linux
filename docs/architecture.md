@@ -46,7 +46,7 @@ Per rispettare le convenzioni FHS e Debian senza disperdere le informazioni di p
 - **Configurazioni standard Debian/Upstream:** rimangono nei percorsi canonici (`/etc/systemd/`, `/etc/network/`, `/etc/apt/`).
 - **Namespace dedicato Sable (`/etc/sable/`):**
   - `/etc/sable/release`: Nome della release (`Sable Linux`).
-  - `/etc/sable/version`: Versione semantica (`0.1.0`).
+  - `/etc/sable/version`: Versione semantica (`0.4.0`).
   - `/etc/sable/codename`: Codename del rilascio (`Nightfall`).
   - `/etc/sable/build-info`: Timestamp, host di build e profilo compilato.
   - `/etc/sable/config/`: Snapshot della configurazione di sistema utilizzata durante la build.

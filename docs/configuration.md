@@ -60,7 +60,7 @@ A differenza dei file di configurazione shell, le liste dei pacchetti utilizzano
 |---|---|---|
 | `SABLE_NAME` | `"Sable Linux"` | Nome ufficiale del sistema operativo |
 | `SABLE_ID` | `"sable"` | Identificativo FHS conforme a `/etc/os-release` |
-| `SABLE_VERSION` | `"0.1.0"` | Versione semantica corrente |
+| `SABLE_VERSION` | `"0.4.0"` | Versione semantica corrente |
 | `SABLE_CODENAME` | `"Nightfall"` | Nome in codice della versione |
 | `SABLE_URL` | `"https://github.com/..."` | URL del progetto |
 | `DEBIAN_SUITE` | `"trixie"` | Suite upstream Debian (13) |

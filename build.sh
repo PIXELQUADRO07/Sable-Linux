@@ -92,7 +92,7 @@ cleanup_on_exit() {
         fi
         echo -e "\nFull build log available at: ${BOLD}${BUILD_LOG}${RESET}"
         # Cleanup temporary mounts if any
-        if [[ -d "${BUILD_DIR}/mnt" ]] && mountpoint -q "${BUILD_DIR}/mnt" 2>/dev/null; then
+        if [[ -d "${BUILD_DIR}/mnt" ]]; then
             umount -R "${BUILD_DIR}/mnt" 2>/dev/null || true
         fi
     fi
@@ -139,7 +139,7 @@ cat << "EOF"
  |____/ \__,_|_.__/|_|\___| |_____|_|_| |_|\__,_/_/\_\
 EOF
 echo -e "${RESET}"
-echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.1.0} (${SABLE_CODENAME:-Nightfall})"
+echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.4.0} (${SABLE_CODENAME:-Nightfall})"
 echo -e "${BOLD}Profile:${RESET}        ${SABLE_PROFILE:-desktop} | Arch: ${DEBIAN_ARCH:-amd64} | Suite: ${DEBIAN_SUITE:-trixie}"
 echo -e "${BOLD}Logs:${RESET}           ${BUILD_LOG}"
 
@@ -149,7 +149,7 @@ echo -e "${BOLD}Logs:${RESET}           ${BUILD_LOG}"
 CURRENT_STAGE=1
 draw_progress_bar 1 ${TOTAL_STAGES} "Verifying host build dependencies"
 
-REQUIRED_TOOLS=(debootstrap parted mkfs.ext4 losetup truncate blkid rsync)
+REQUIRED_TOOLS=(debootstrap parted mkfs.ext4 mkfs.fat partprobe udevadm losetup truncate blkid rsync)
 MISSING_TOOLS=()
 
 for tool in "${REQUIRED_TOOLS[@]}"; do
@@ -161,7 +161,8 @@ done
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
     echo -e "${RED}Error: Missing required host tools: ${MISSING_TOOLS[*]}${RESET}" | tee -a "${ERROR_LOG}"
     echo "Install them using:"
-    echo "  sudo dnf install debootstrap parted e2fsprogs util-linux"
+    echo "  sudo dnf install debootstrap parted e2fsprogs dosfstools util-linux"
+    echo "  or sudo apt install debootstrap parted dosfstools util-linux e2fsprogs"
     exit 1
 fi
 log_info "All required host tools are available."
@@ -328,8 +329,9 @@ if [[ -f "${BUILD_DIR}/sable.img" ]]; then
     IMAGE_ACTUAL_SIZE="$(du -h "${BUILD_DIR}/sable.img" | cut -f1)"
     echo -e "${BOLD}Image Size:${RESET}    ${IMAGE_ACTUAL_SIZE}"
 fi
-if [[ -f "${BUILD_DIR}"/sable-*.iso ]]; then
-    ISO_PATH="$(ls -t "${BUILD_DIR}"/sable-*.iso | head -n1)"
+ISO_FILES=("${BUILD_DIR}"/sable-*.iso)
+if [[ -f "${ISO_FILES[0]:-}" ]]; then
+    ISO_PATH="${ISO_FILES[0]}"
     ISO_SIZE="$(du -h "${ISO_PATH}" | cut -f1)"
     echo -e "${BOLD}Live ISO:${RESET}      ${ISO_PATH} (${ISO_SIZE})"
 fi

@@ -14,7 +14,7 @@ fi
 ROOTFS="${PROJECT_ROOT}/rootfs"
 BUILD_DIR="${PROJECT_ROOT}/build"
 ISO_BUILD_DIR="${BUILD_DIR}/iso_root"
-OUTPUT_ISO="${BUILD_DIR}/sable-${SABLE_VERSION:-0.3.0}-live-amd64.iso"
+OUTPUT_ISO="${BUILD_DIR}/sable-${SABLE_VERSION:-0.4.0}-live-amd64.iso"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Error: This script must be run with sudo:"
@@ -27,14 +27,31 @@ if [[ ! -d "${ROOTFS}" ]]; then
     exit 1
 fi
 
-REQUIRED_TOOLS=(mksquashfs xorriso grub-mkrescue mformat mcopy)
+GRUB_RESCUE_CMD=""
+if command -v grub2-mkrescue >/dev/null 2>&1; then
+    GRUB_RESCUE_CMD="grub2-mkrescue"
+elif command -v grub-mkrescue >/dev/null 2>&1; then
+    GRUB_RESCUE_CMD="grub-mkrescue"
+fi
+
+REQUIRED_TOOLS=(mksquashfs xorriso mformat mcopy)
+MISSING_TOOLS=()
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! command -v "$tool" >/dev/null 2>&1; then
-        echo "Error: Required tool '$tool' is not installed on host."
-        echo "Install it with: sudo apt install squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools"
-        exit 1
+        MISSING_TOOLS+=("$tool")
     fi
 done
+if [[ -z "${GRUB_RESCUE_CMD}" ]]; then
+    MISSING_TOOLS+=("grub2-mkrescue/grub-mkrescue")
+fi
+
+if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
+    echo "Error: Missing required ISO tools: ${MISSING_TOOLS[*]}"
+    echo "Install them using:"
+    echo "  sudo dnf install squashfs-tools xorriso grub2-tools-extra mtools dosfstools"
+    echo "  or sudo apt install squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools"
+    exit 1
+fi
 
 echo "=========================================================="
 echo " Building Sable Linux Hybrid Live ISO with Calamares..."
@@ -43,10 +60,27 @@ echo "=========================================================="
 
 mkdir -p "${ISO_BUILD_DIR}/live" "${ISO_BUILD_DIR}/boot/grub"
 
-echo "1. Installing Calamares into rootfs for live installer support..."
+echo "1. Preparing rootfs for live environment (installing live-boot, live-config, calamares)..."
 "${PROJECT_ROOT}/scripts/mount.sh" >> "${BUILD_LOG:-/dev/null}" 2>&1 || true
+
 chroot "${ROOTFS}" apt-get update || true
-chroot "${ROOTFS}" apt-get install -y --no-install-recommends calamares qtbase5-dev qml-module-qtquick-controls2 || true
+chroot "${ROOTFS}" apt-get install -y --no-install-recommends live-boot live-config systemd-sysv calamares qtbase5-dev qml-module-qtquick-controls2 || true
+
+# Ensure live user password does not expire immediately on live boot
+chroot "${ROOTFS}" chage -d -1 sable 2>/dev/null || true
+
+# Copy Calamares configuration to /etc/calamares if available
+if [[ -d "${PROJECT_ROOT}/config/calamares" ]]; then
+    mkdir -p "${ROOTFS}/etc/calamares"
+    cp -a "${PROJECT_ROOT}/config/calamares/." "${ROOTFS}/etc/calamares/"
+fi
+
+# Clean apt caches inside rootfs before packing into squashfs
+chroot "${ROOTFS}" apt-get clean || true
+rm -rf "${ROOTFS}/var/lib/apt/lists/"* || true
+rm -rf "${ROOTFS}/var/cache/apt/archives/"* || true
+rm -f "${ROOTFS}/etc/resolv.conf"
+
 "${PROJECT_ROOT}/scripts/mount.sh" -u >> "${BUILD_LOG:-/dev/null}" 2>&1 || true
 
 echo "2. Compressing rootfs into squashfs..."
@@ -76,8 +110,8 @@ menuentry "Sable Linux Live (Safe Mode / Failsafe)" {
 }
 EOF
 
-echo "5. Generating bootable hybrid ISO..."
-grub-mkrescue -o "${OUTPUT_ISO}" "${ISO_BUILD_DIR}"
+echo "5. Generating bootable hybrid ISO using ${GRUB_RESCUE_CMD}..."
+"${GRUB_RESCUE_CMD}" -o "${OUTPUT_ISO}" "${ISO_BUILD_DIR}"
 
 if [[ -n "${SUDO_USER:-}" && -f "${OUTPUT_ISO}" ]]; then
     chown "${SUDO_USER}:${SUDO_USER}" "${OUTPUT_ISO}" 2>/dev/null || true

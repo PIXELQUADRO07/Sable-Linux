@@ -1,86 +1,82 @@
-- name: "Desktop extras"
-  description: "Additional KDE applications kept out of the live squashfs."
-  hidden: false
-  selected: false
-  critical: false
+# Gruppi installabili da rete durante l'installazione.
+# ATTENZIONE: un nome di pacchetto inesistente fa fallire l'intera installazione.
+# Verifica ogni nome nel chroot con:  apt-cache show <pacchetto>
+- name: "KDE Plasma - applicazioni complete"
+  description: "Suite KDE standard (kde-standard)"
+  selected: true
   packages:
-    - kmail
-    - kontact
-    - korganizer
-    - kaddressbook
+    - kde-standard
+
+- name: "Internet e comunicazione"
+  description: "Browser web"
+  selected: true
+  packages:
+    - firefox-esr
+
+- name: "Ufficio"
+  description: "LibreOffice"
+  selected: false
+  packages:
     - libreoffice-writer
     - libreoffice-calc
     - libreoffice-impress
-    - gwenview
-    - okular
-    - kdenlive
-    - vlc
 
-- name: "Printing"
-  description: "CUPS printing stack and Plasma print manager."
-  hidden: false
+- name: "Sviluppo"
+  description: "Compilatori e strumenti di sviluppo"
   selected: false
-  critical: false
-  packages:
-    - cups
-    - cups-client
-    - print-manager
-    - system-config-printer
-
-- name: "Development"
-  description: "Compilers and common development tools."
-  hidden: false
-  selected: false
-  critical: false
   packages:
     - build-essential
     - git
-    - gdb
     - cmake
-    - pkg-config
+    - gdb
+    - clang
     - python3-venv
-    - python3-pip
 
-- name: "Pentest tools"
-  description: "Optional Debian security-assessment toolkit. Not installed on the live ISO by default."
-  hidden: false
+- name: "Sable Security Tools"
+  description: "Strumenti di sicurezza informatica (uso lecito/autorizzato)"
   selected: false
-  critical: false
-  packages:
-    - nmap
-    - masscan
-    - netcat-openbsd
-    - socat
-    - tcpdump
-    - wireshark
-    - dnsenum
-    - dnsrecon
-    - whois
-    - traceroute
-    - enum4linux
-    - smbclient
-    - cifs-utils
-    - sqlmap
-    - nikto
-    - wfuzz
-    - dirb
-    - gobuster
-    - ffuf
-    - hashcat
-    - john
-    - hydra
-    - medusa
-    - aircrack-ng
-    - kismet
-    - hcxtools
-    - hcxdumptool
-    - mdk4
-    - binwalk
-    - foremost
-    - sleuthkit
-    - autopsy
-    - testdisk
-    - scalpel
-    - git
-    - tmux
-    - vim
+  expanded: true
+  subgroups:
+    - name: "Rete e ricognizione"
+      description: "Scansione e analisi di rete"
+      packages:
+        - nmap
+        - masscan
+        - tcpdump
+        - wireshark
+        - whois
+        - dnsenum
+        - dnsrecon
+        - socat
+    - name: "Web"
+      description: "Test di applicazioni web"
+      packages:
+        - sqlmap
+        - nikto
+        - gobuster
+        - ffuf
+        - dirb
+        - wfuzz
+    - name: "Password"
+      description: "Audit di password"
+      packages:
+        - john
+        - hashcat
+        - hydra
+        - medusa
+    - name: "Wireless"
+      description: "Audit di reti wireless"
+      packages:
+        - aircrack-ng
+        - kismet
+        - mdk4
+        - hcxtools
+        - hcxdumptool
+    - name: "Forensics"
+      description: "Analisi forense e recupero dati"
+      packages:
+        - binwalk
+        - foremost
+        - sleuthkit
+        - testdisk
+        - scalpel

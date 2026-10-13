@@ -100,11 +100,9 @@ UPSTREAM_SUITE="${DEBIAN_SUITE}"
 ARCH="${DEBIAN_ARCH}"
 EOF
 
-# Snapshot build identity only (do not clone theme trees into /etc/sable).
+# Copy installed system configuration into /etc/sable/
 mkdir -p /etc/sable/config
-cp "${CONFIG_DIR}/sable.conf" /etc/sable/config/ 2>/dev/null || true
-cp -a "${CONFIG_DIR}/base" /etc/sable/config/ 2>/dev/null || true
-cp "${CONFIG_DIR}/desktop/packages.list" /etc/sable/config/desktop-packages.list 2>/dev/null || true
+cp -a "${CONFIG_DIR}/." /etc/sable/config/ 2>/dev/null || true
 
 echo "--> [Step 6] Installing Sable Branding Assets, MOTD & fastfetch..."
 mkdir -p /usr/share/sable/assets
@@ -196,50 +194,52 @@ echo "--> [Step 8] Configuring Default User..."
 USER_NAME="${SABLE_DEFAULT_USER:-sable}"
 if ! id "${USER_NAME}" >/dev/null 2>&1; then
     useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
-    echo "${USER_NAME}:sablelinux" | chpasswd
+    echo "${USER_NAME}:${USER_NAME}" | chpasswd
     usermod -aG sudo "${USER_NAME}"
-    echo "User '${USER_NAME}' created with sudo privileges (development image login; ISO uses live-config)."
+    # NOTA: niente "chage -d 0": SDDM non gestisce il cambio password obbligatorio
+    # e il login resterebbe bloccato. Utente di sviluppo: sable / sable.
+    echo "User '${USER_NAME}' created with sudo privileges (dev password: ${USER_NAME})."
 else
     echo "User '${USER_NAME}' already exists."
 fi
 
-echo "--> [Step 9] Generating Locales and keyboard..."
+echo "--> [Step 9] Generating Locales..."
 if command -v locale-gen >/dev/null 2>&1; then
-    enable_locale() {
-        local loc="$1"
-        [[ -z "${loc}" ]] && return 0
-        if grep -q "^# *${loc} UTF-8" /etc/locale.gen 2>/dev/null; then
-            sed -i "s/^# *${loc} UTF-8/${loc} UTF-8/" /etc/locale.gen
-        elif ! grep -q "^${loc} UTF-8" /etc/locale.gen 2>/dev/null; then
-            echo "${loc} UTF-8" >> /etc/locale.gen
-        fi
-    }
-    enable_locale "${SABLE_DEFAULT_LOCALE:-en_US.UTF-8}"
-    for extra in ${SABLE_EXTRA_LOCALES:-}; do
-        enable_locale "${extra}"
-    done
+    sed -i 's/# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen || true
     locale-gen || true
     update-locale LANG="${SABLE_DEFAULT_LOCALE:-en_US.UTF-8}" || true
 fi
 
-mkdir -p /etc/default
-cat << EOF > /etc/default/keyboard
-XKBMODEL="pc105"
-XKBLAYOUT="${SABLE_DEFAULT_KEYBOARD:-us}"
-XKBVARIANT=""
-XKBOPTIONS=""
-BACKSPACE="guess"
-EOF
-
-echo "--> [Step 10] Applying system hardening (pentest suite is a Calamares netinstall group)..."
+echo "--> [Step 10] Applying System Hardening & Cybersecurity Tool Suite..."
 if [[ -f "${CONFIG_DIR}/base/hardening.conf" ]]; then
     mkdir -p /etc/sysctl.d
     cp "${CONFIG_DIR}/base/hardening.conf" /etc/sysctl.d/99-sable-hardening.conf
     chmod 644 /etc/sysctl.d/99-sable-hardening.conf
 fi
 
-if [[ -n "${SABLE_NETWORK_MANAGER:-}" ]] && ! dpkg -s "${SABLE_NETWORK_MANAGER}" >/dev/null 2>&1; then
-    apt-get install -y --no-install-recommends "${SABLE_NETWORK_MANAGER}" || true
+# I tool di sicurezza NON sono più nella base (ISO troppo pesante): sono un gruppo
+# della netinstall (config/calamares/modules/netinstall.yaml).
+# Per reinstallarli nella base: SABLE_INSTALL_PENTEST=true in config/sable.conf
+PENTEST_PKGS=()
+if [[ "${SABLE_INSTALL_PENTEST:-false}" == "true" && -f "${CONFIG_DIR}/tools/packages-pentest.list" ]]; then
+    while IFS= read -r pkg || [[ -n "$pkg" ]]; do
+        pkg="$(echo "$pkg" | sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        if [[ -n "$pkg" ]]; then
+            PENTEST_PKGS+=("$pkg")
+        fi
+    done < "${CONFIG_DIR}/tools/packages-pentest.list"
+fi
+
+if [[ ${#PENTEST_PKGS[@]} -gt 0 ]]; then
+    echo "Installing cybersecurity tool suite package by package..."
+    for pkg in "${PENTEST_PKGS[@]}"; do
+        if apt-cache show "$pkg" >/dev/null 2>&1; then
+            echo "  Installing $pkg..."
+            apt-get install -y --no-install-recommends "$pkg" || echo "Warning: Failed to install $pkg"
+        else
+            echo "  Skipping missing package: $pkg (not in repository)"
+        fi
+    done
 fi
 
 systemctl enable apparmor 2>/dev/null || true

@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Sable Linux — Hybrid Live ISO (overlay live rootfs + Calamares)
-# Operates on an overlay of rootfs so the development image stays clean.
+# Sable Linux — Live ISO builder (ibrida BIOS + UEFI, KDE live + Calamares netinstall)
+# ==============================================================================
+# Differenze rispetto alla versione precedente:
+#  - lavora su una COPIA del rootfs (build/live-rootfs): l'immagine .img non viene
+#    più contaminata da live-boot/calamares
+#  - nessun "|| true" sugli step critici: se live-boot non entra nell'initrd, si ferma
+#  - /boot resta dentro lo squashfs (serve al sistema installato)
+#  - l'utente 'sable' viene rimosso dallo squashfs e ricreato a runtime da live-config
+#  - controlla che l'host abbia i moduli GRUB sia BIOS che UEFI
+#  - kernel/initrd = versione più recente, non il primo risultato di find
 # ==============================================================================
 set -Eeuo pipefail
 
@@ -9,30 +17,36 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 CONFIG_FILE="${PROJECT_ROOT}/config/sable.conf"
 if [[ -f "${CONFIG_FILE}" ]]; then
-    # shellcheck source=../config/sable.conf
+    # shellcheck source=/dev/null
     source "${CONFIG_FILE}"
 fi
 
 ROOTFS="${PROJECT_ROOT}/rootfs"
 BUILD_DIR="${PROJECT_ROOT}/build"
-ISO_BUILD_DIR="${BUILD_DIR}/iso_root"
-LIVE_UPPER="${BUILD_DIR}/live-upper"
-LIVE_WORK="${BUILD_DIR}/live-work"
-LIVE_ROOT="${BUILD_DIR}/live-root"
-OUTPUT_ISO="${BUILD_DIR}/sable-${SABLE_VERSION:-0.5.0}-live-amd64.iso"
-LIVE_USER="${SABLE_LIVE_USER:-live}"
+LIVE_ROOT="${BUILD_DIR}/live-rootfs"
+ISO_DIR="${BUILD_DIR}/iso_root"
+VERSION="${SABLE_VERSION:-0.5.0}"
+OUTPUT_ISO="${BUILD_DIR}/sable-${VERSION}-live-amd64.iso"
+SQUASHFS_COMP="${SABLE_SQUASHFS_COMP:-zstd}"     # zstd (veloce) oppure xz (più piccolo)
+LIVE_USER="${SABLE_DEFAULT_USER:-sable}"
+LIVE_HOSTNAME="${SABLE_DEFAULT_HOSTNAME:-sable}"
+VOLID="SABLE_LIVE"
 
 if [[ "${EUID}" -ne 0 ]]; then
-    echo "Error: This script must be run with sudo:"
-    echo "  sudo $0"
+    echo "Errore: esegui con sudo: sudo $0"
     exit 1
 fi
 
-if [[ ! -d "${ROOTFS}" || ! -e "${ROOTFS}/etc/debian_version" ]]; then
-    echo "Error: Rootfs not found at ${ROOTFS}. Build it first with sudo ./build.sh"
+if [[ ! -e "${ROOTFS}/etc/sable/release" ]]; then
+    echo "Errore: rootfs non trovato o incompleto in ${ROOTFS}. Esegui prima: sudo ./build.sh"
+    exit 1
+fi
+if ! find "${ROOTFS}/boot" -maxdepth 1 -name 'vmlinuz-*' -print -quit | grep -q .; then
+    echo "Errore: nessun kernel in ${ROOTFS}/boot. Esegui prima: sudo ./scripts/kernel.sh"
     exit 1
 fi
 
+# --- Tool host ----------------------------------------------------------------
 GRUB_RESCUE_CMD=""
 if command -v grub2-mkrescue >/dev/null 2>&1; then
     GRUB_RESCUE_CMD="grub2-mkrescue"
@@ -40,192 +54,216 @@ elif command -v grub-mkrescue >/dev/null 2>&1; then
     GRUB_RESCUE_CMD="grub-mkrescue"
 fi
 
-REQUIRED_TOOLS=(mksquashfs xorriso mformat mcopy)
-MISSING_TOOLS=()
-for tool in "${REQUIRED_TOOLS[@]}"; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
-        MISSING_TOOLS+=("$tool")
-    fi
+MISSING=()
+for tool in mksquashfs xorriso mformat rsync; do
+    command -v "$tool" >/dev/null 2>&1 || MISSING+=("$tool")
 done
-if [[ -z "${GRUB_RESCUE_CMD}" ]]; then
-    MISSING_TOOLS+=("grub2-mkrescue/grub-mkrescue")
-fi
-
-if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
-    echo "Error: Missing required ISO tools: ${MISSING_TOOLS[*]}"
-    echo "Install them using:"
-    echo "  sudo dnf install squashfs-tools xorriso grub2-tools-extra grub2-pc-modules grub2-efi-x64-modules mtools dosfstools"
-    echo "  or sudo apt install squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools"
+[[ -n "${GRUB_RESCUE_CMD}" ]] || MISSING+=("grub-mkrescue/grub2-mkrescue")
+for d in /usr/lib/grub/i386-pc /usr/lib/grub/x86_64-efi; do
+    [[ -d "$d" ]] || MISSING+=("moduli GRUB: $d")
+done
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "Errore: mancano questi componenti sull'host: ${MISSING[*]}"
+    echo "  Fedora: sudo dnf install squashfs-tools xorriso mtools rsync grub2-tools-extra grub2-pc-modules grub2-efi-x64-modules"
+    echo "  Debian: sudo apt install squashfs-tools xorriso mtools rsync grub-pc-bin grub-efi-amd64-bin"
     exit 1
 fi
 
-echo "=========================================================="
-echo " Building Sable Linux Hybrid Live ISO with Calamares..."
-echo " Output: ${OUTPUT_ISO}"
-echo " Live rootfs: overlay on ${ROOTFS} (base rootfs is not modified)"
-echo "=========================================================="
+# --- Mount helpers ------------------------------------------------------------
+mounts_active() { findmnt -rn -o TARGET | grep -q "^${LIVE_ROOT}/"; }
 
-cleanup_live() {
-    "${PROJECT_ROOT}/scripts/mount.sh" -u >/dev/null 2>&1 || true
-    if mountpoint -q "${LIVE_ROOT}" 2>/dev/null; then
-        umount "${LIVE_ROOT}" 2>/dev/null || umount -l "${LIVE_ROOT}" 2>/dev/null || true
+umount_live() {
+    local m
+    for m in run sys dev/pts dev proc; do
+        if mountpoint -q "${LIVE_ROOT}/${m}" 2>/dev/null; then
+            umount "${LIVE_ROOT}/${m}" 2>/dev/null || umount -l "${LIVE_ROOT}/${m}" 2>/dev/null || true
+        fi
+    done
+}
+
+mount_live() {
+    mkdir -p "${LIVE_ROOT}"/{dev,proc,sys,run}
+    mount --bind /dev "${LIVE_ROOT}/dev"
+    mount --bind /dev/pts "${LIVE_ROOT}/dev/pts"
+    mount -t proc proc "${LIVE_ROOT}/proc"
+    mount -t sysfs sysfs "${LIVE_ROOT}/sys"
+    mount -t tmpfs tmpfs "${LIVE_ROOT}/run"
+}
+
+setup_dns() {
+    rm -f "${LIVE_ROOT}/etc/resolv.conf"
+    if grep -q '127.0.0.53' /etc/resolv.conf 2>/dev/null && [[ -f /run/systemd/resolve/resolv.conf ]]; then
+        cp -L /run/systemd/resolve/resolv.conf "${LIVE_ROOT}/etc/resolv.conf"
+    else
+        cp -L /etc/resolv.conf "${LIVE_ROOT}/etc/resolv.conf" 2>/dev/null || echo "nameserver 9.9.9.9" > "${LIVE_ROOT}/etc/resolv.conf"
     fi
 }
-trap cleanup_live EXIT
 
-"${PROJECT_ROOT}/scripts/mount.sh" -u >/dev/null 2>&1 || true
+trap umount_live EXIT
 
-rm -rf "${LIVE_UPPER}" "${LIVE_WORK}"
-mkdir -p "${LIVE_UPPER}" "${LIVE_WORK}" "${LIVE_ROOT}" "${ISO_BUILD_DIR}/live" "${ISO_BUILD_DIR}/boot/grub"
+echo "=========================================================="
+echo " Sable Linux ${VERSION} — build ISO live (KDE + Calamares netinstall)"
+echo " Output: ${OUTPUT_ISO}"
+echo "=========================================================="
 
-echo "1. Mounting live overlay (lowerdir=rootfs)..."
-if ! mount -t overlay overlay \
-    -o "lowerdir=${ROOTFS},upperdir=${LIVE_UPPER},workdir=${LIVE_WORK}" \
-    "${LIVE_ROOT}"; then
-    echo "Overlayfs unavailable; falling back to rsync copy of rootfs."
-    rsync -aHAX --delete \
-        --exclude={'/dev/*','/proc/*','/sys/*','/run/*','/tmp/*'} \
-        "${ROOTFS}/" "${LIVE_ROOT}/"
-    mkdir -p "${LIVE_ROOT}/dev" "${LIVE_ROOT}/proc" "${LIVE_ROOT}/sys" "${LIVE_ROOT}/run" "${LIVE_ROOT}/tmp"
+# --- 1. Copia del rootfs ------------------------------------------------------
+echo "1/6 Copia del rootfs in ${LIVE_ROOT} ..."
+"${SCRIPT_DIR}/mount.sh" -u >/dev/null 2>&1 || true
+umount_live
+if mounts_active; then
+    echo "Errore: ci sono ancora mount sotto ${LIVE_ROOT}. Smontali a mano e riprova."
+    exit 1
+fi
+mkdir -p "${LIVE_ROOT}"
+rsync -aHAX --numeric-ids --delete \
+    --exclude='/dev/*' --exclude='/proc/*' --exclude='/sys/*' --exclude='/run/*' --exclude='/tmp/*' \
+    "${ROOTFS}/" "${LIVE_ROOT}/"
+
+# --- 2. Installazione live-boot + Calamares nella copia -----------------------
+echo "2/6 Installazione live-boot, live-config e Calamares (nessun errore viene ignorato) ..."
+mount_live
+setup_dns
+
+cat > "${LIVE_ROOT}/tmp/sable-live-setup.sh" << 'EOS'
+#!/bin/bash
+set -Eeuo pipefail
+export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
+apt-get update
+apt-get install -y --no-install-recommends \
+    live-boot live-config live-config-systemd \
+    rsync squashfs-tools efibootmgr dosfstools e2fsprogs ntfs-3g
+apt-get install -y calamares
+EOS
+chmod +x "${LIVE_ROOT}/tmp/sable-live-setup.sh"
+chroot "${LIVE_ROOT}" /tmp/sable-live-setup.sh
+
+# --- 3. Configurazione live ---------------------------------------------------
+echo "3/6 Configurazione live (Calamares, autologin SDDM, launcher, rimozione utente di sviluppo) ..."
+
+# Calamares: copiato DOPO l'installazione del pacchetto (così non viene sovrascritto)
+if [[ -d "${PROJECT_ROOT}/config/calamares" ]]; then
+    mkdir -p "${LIVE_ROOT}/etc/calamares"
+    cp -a "${PROJECT_ROOT}/config/calamares/." "${LIVE_ROOT}/etc/calamares/"
 fi
 
-export SABLE_ROOTFS="${LIVE_ROOT}"
-"${PROJECT_ROOT}/scripts/mount.sh"
-
-echo "2. Installing live-boot, live-config, Plymouth, Calamares (no Qt5 -dev)..."
-chroot "${LIVE_ROOT}" apt-get update
-chroot "${LIVE_ROOT}" apt-get install -y --no-install-recommends \
-    live-boot \
-    live-config \
-    live-config-systemd \
-    systemd-sysv \
-    calamares \
-    plymouth \
-    plymouth-themes \
-    policykit-1 \
-    rsync
-
-echo "3. Applying live identity, Calamares branding, installer launcher, Plymouth..."
-mkdir -p "${LIVE_ROOT}/etc/live/config.conf.d"
-cp "${PROJECT_ROOT}/config/live/config.conf" "${LIVE_ROOT}/etc/live/config.conf.d/sable.conf"
-cat >> "${LIVE_ROOT}/etc/live/config.conf.d/sable.conf" << EOF
-LIVE_USERNAME="${LIVE_USER}"
-EOF
-
-mkdir -p "${LIVE_ROOT}/etc/calamares/modules"
-cp -a "${PROJECT_ROOT}/config/calamares/settings.conf" "${LIVE_ROOT}/etc/calamares/settings.conf"
-cp -a "${PROJECT_ROOT}/config/calamares/modules/." "${LIVE_ROOT}/etc/calamares/modules/"
-
-mkdir -p "${LIVE_ROOT}/usr/share/calamares/branding/sable" "${LIVE_ROOT}/etc/calamares/branding/sable"
-cp -a "${PROJECT_ROOT}/config/calamares/branding/sable/." "${LIVE_ROOT}/usr/share/calamares/branding/sable/"
-cp -a "${PROJECT_ROOT}/config/calamares/branding/sable/." "${LIVE_ROOT}/etc/calamares/branding/sable/"
-
-mkdir -p "${LIVE_ROOT}/usr/share/applications" "${LIVE_ROOT}/etc/skel/Desktop"
-cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/usr/share/applications/sable-installer.desktop"
-cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
-chmod 644 "${LIVE_ROOT}/usr/share/applications/sable-installer.desktop"
-chmod 755 "${LIVE_ROOT}/etc/skel/Desktop"
-
-mkdir -p "${LIVE_ROOT}/usr/share/plymouth/themes/sable"
-cp "${PROJECT_ROOT}/config/live/plymouth/sable.plymouth" "${LIVE_ROOT}/usr/share/plymouth/themes/sable/"
-cp "${PROJECT_ROOT}/config/live/plymouth/sable.script" "${LIVE_ROOT}/usr/share/plymouth/themes/sable/"
-cp "${PROJECT_ROOT}/config/calamares/branding/sable/logo.png" "${LIVE_ROOT}/usr/share/plymouth/themes/sable/logo.png"
-chroot "${LIVE_ROOT}" plymouth-set-default-theme sable || \
-    chroot "${LIVE_ROOT}" sh -c 'echo "sable" > /etc/plymouth/plymouthd.conf' || true
-
-# SDDM autologin for the live user (created at boot by live-config)
+# Autologin SDDM solo nella sessione live (rimosso dal sistema installato da shellprocess_cleanup)
 mkdir -p "${LIVE_ROOT}/etc/sddm.conf.d"
-cat << EOF > "${LIVE_ROOT}/etc/sddm.conf.d/sable-live.conf"
+cat > "${LIVE_ROOT}/etc/sddm.conf.d/zz-sable-live-autologin.conf" << EOS
 [Autologin]
 User=${LIVE_USER}
 Session=plasma
+Relogin=false
+EOS
 
-[Theme]
-Current=breeze
+# Launcher dell'installer nel menu (rimosso dal sistema installato)
+cat > "${LIVE_ROOT}/usr/share/applications/sable-install.desktop" << 'EOS'
+[Desktop Entry]
+Type=Application
+Name=Install Sable Linux
+Comment=Install Sable Linux on this computer
+Exec=sudo -E calamares
+Icon=system-software-install
+Terminal=false
+Categories=System;
+EOS
 
-[Users]
-MaximumUid=60000
-MinimumUid=1000
-EOF
+cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
+#!/bin/bash
+set -Eeuo pipefail
+export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
 
-# Drop the development 'sable' account from the live squashfs so Calamares
-# does not install a second user with a well-known password.
-if chroot "${LIVE_ROOT}" id "${SABLE_DEFAULT_USER:-sable}" >/dev/null 2>&1; then
-    chroot "${LIVE_ROOT}" userdel -r "${SABLE_DEFAULT_USER:-sable}" || true
+# L'utente di sviluppo NON deve finire nello squashfs: Calamares lo copierebbe
+# nel sistema installato con password nota. Lo crea live-config al boot.
+if id "$LIVE_USER" >/dev/null 2>&1; then
+    userdel -rf "$LIVE_USER" || true
 fi
-# live-config must be allowed to expire/create the live user freely
-chroot "${LIVE_ROOT}" chage -d -1 root 2>/dev/null || true
-
-echo "4. Rebuilding initramfs with live-boot hooks..."
-chroot "${LIVE_ROOT}" sh -c 'update-initramfs -u -k all'
-
-INITRD_FILE="$(find "${LIVE_ROOT}/boot" -maxdepth 1 -name "initrd.img-*" | head -n1)"
-if [[ -z "${INITRD_FILE}" ]]; then
-    echo "Error: no initrd.img found in live /boot after update-initramfs"
+if id "$LIVE_USER" >/dev/null 2>&1; then
+    echo "ERRORE: impossibile rimuovere l'utente $LIVE_USER" >&2
     exit 1
 fi
-if ! chroot "${LIVE_ROOT}" sh -c "lsinitramfs /boot/$(basename "${INITRD_FILE}")" | grep -Eq 'live|boot=live|scripts/live'; then
-    echo "Error: live-boot hooks are missing from the live initramfs."
-    echo "Refusing to emit an ISO that would drop to the initramfs prompt."
+
+update-initramfs -u -k all
+
+KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
+if ! lsinitramfs "/boot/initrd.img-${KVER}" | grep -q 'scripts/live'; then
+    echo "ERRORE: live-boot NON è presente nell'initrd di ${KVER}: l'ISO non può avviarsi." >&2
+    exit 1
+fi
+echo "OK: live-boot presente nell'initrd (${KVER})"
+
+apt-get clean
+rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /tmp/sable-live-*.sh /root/.bash_history
+: > /etc/machine-id
+: > /etc/resolv.conf
+find /var/log -type f -exec truncate -s 0 {} +
+EOS
+chmod +x "${LIVE_ROOT}/tmp/sable-live-finish.sh"
+chroot "${LIVE_ROOT}" env LIVE_USER="${LIVE_USER}" /tmp/sable-live-finish.sh
+
+umount_live
+if mounts_active; then
+    echo "Errore: mount residui sotto ${LIVE_ROOT}, interrompo prima di creare lo squashfs."
     exit 1
 fi
 
-chroot "${LIVE_ROOT}" apt-get clean
-rm -rf "${LIVE_ROOT}/var/lib/apt/lists/"* || true
-rm -rf "${LIVE_ROOT}/var/cache/apt/archives/"* || true
-rm -f "${LIVE_ROOT}/etc/resolv.conf"
-"${PROJECT_ROOT}/scripts/mount.sh" -u >/dev/null 2>&1 || true
+# --- 4. Squashfs --------------------------------------------------------------
+echo "4/6 Creazione squashfs (${SQUASHFS_COMP}) ..."
+rm -rf "${ISO_DIR}"
+mkdir -p "${ISO_DIR}/live" "${ISO_DIR}/boot/grub"
 
-echo "5. Compressing live rootfs into squashfs (kernel/initrd included for Calamares)..."
-rm -f "${ISO_BUILD_DIR}/live/filesystem.squashfs"
-# Include /boot so the installed system has a kernel. Exclude runtime mounts.
-mksquashfs "${LIVE_ROOT}" "${ISO_BUILD_DIR}/live/filesystem.squashfs" \
-    -comp xz -Xbcj x86 -b 1M \
-    -e dev proc sys run tmp
+SQ_OPTS=(-noappend -comp "${SQUASHFS_COMP}")
+if [[ "${SQUASHFS_COMP}" == "zstd" ]]; then
+    SQ_OPTS+=(-Xcompression-level 15 -b 1M)
+elif [[ "${SQUASHFS_COMP}" == "xz" ]]; then
+    SQ_OPTS+=(-b 1M)
+fi
+mksquashfs "${LIVE_ROOT}" "${ISO_DIR}/live/filesystem.squashfs" "${SQ_OPTS[@]}"
 
-SQUASH_BYTES="$(stat -c%s "${ISO_BUILD_DIR}/live/filesystem.squashfs")"
-if (( SQUASH_BYTES > 4000000000 )); then
-    echo "Warning: squashfs is ${SQUASH_BYTES} bytes (>4 GiB). ISO9660 may fail; slim the image."
+SQ_SIZE="$(stat -c %s "${ISO_DIR}/live/filesystem.squashfs")"
+if (( SQ_SIZE > 4294967295 )); then
+    echo "Attenzione: lo squashfs supera 4 GiB ($((SQ_SIZE / 1048576)) MiB). Funziona, ma per una netinstall conviene alleggerire la base."
 fi
 
-echo "6. Copying kernel and initramfs to ISO boot directory..."
-KERNEL_FILE="$(find "${LIVE_ROOT}/boot" -maxdepth 1 -name "vmlinuz-*" | head -n1)"
-cp "${KERNEL_FILE}" "${ISO_BUILD_DIR}/vmlinuz"
-cp "${INITRD_FILE}" "${ISO_BUILD_DIR}/initrd.img"
+# --- 5. Kernel, initrd e GRUB -------------------------------------------------
+echo "5/6 Kernel, initrd e configurazione GRUB ..."
+KVER="$(ls -1 "${LIVE_ROOT}"/boot/vmlinuz-* | sed "s|.*/vmlinuz-||" | sort -V | tail -n1)"
+[[ -f "${LIVE_ROOT}/boot/initrd.img-${KVER}" ]] || { echo "Errore: initrd per ${KVER} mancante"; exit 1; }
+cp "${LIVE_ROOT}/boot/vmlinuz-${KVER}" "${ISO_DIR}/live/vmlinuz"
+cp "${LIVE_ROOT}/boot/initrd.img-${KVER}" "${ISO_DIR}/live/initrd.img"
+echo "    kernel: ${KVER}"
 
-echo "7. Configuring ISO GRUB (graphical + serial + failsafe)..."
-cat << 'EOF' > "${ISO_BUILD_DIR}/boot/grub/grub.cfg"
-set timeout=8
+cat > "${ISO_DIR}/boot/grub/grub.cfg" << GRUBEOF
 set default=0
-
-if [ -n "$debug" ]; then
-    set pager=1
-fi
-
-insmod all_video
-insmod gfxterm
-terminal_output gfxterm
-terminal_input --append serial
-serial --unit=0 --speed=115200
+set timeout=5
 
 menuentry "Sable Linux Live (KDE Plasma)" {
-    linux /vmlinuz boot=live components quiet splash username=live
-    initrd /initrd.img
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} quiet
+    initrd /live/initrd.img
 }
 
-menuentry "Sable Linux Live (serial console ttyS0)" {
-    linux /vmlinuz boot=live components console=tty0 console=ttyS0,115200n8 username=live nomodeset
-    initrd /initrd.img
+menuentry "Sable Linux Live (grafica sicura / nomodeset)" {
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} nomodeset
+    initrd /live/initrd.img
 }
 
-menuentry "Sable Linux Live (Safe Mode)" {
-    linux /vmlinuz boot=live components nomodeset username=live
-    initrd /initrd.img
+menuentry "Sable Linux Live (carica in RAM)" {
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet
+    initrd /live/initrd.img
 }
-EOF
 
-echo "8. Generating hybrid BIOS+UEFI ISO using ${GRUB_RESCUE_CMD}..."
-"${GRUB_RESCUE_CMD}" -o "${OUTPUT_ISO}" "${ISO_BUILD_DIR}"
+menuentry "Sable Linux Live (DEBUG: verboso + seriale)" {
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} debug earlyprintk=vga console=tty0 console=ttyS0,115200
+    initrd /live/initrd.img
+}
+GRUBEOF
+
+# --- 6. ISO ibrida ------------------------------------------------------------
+echo "6/6 Generazione ISO con ${GRUB_RESCUE_CMD} ..."
+"${GRUB_RESCUE_CMD}" -o "${OUTPUT_ISO}" "${ISO_DIR}" -- -volid "${VOLID}"
+
+EL_TORITO="$(xorriso -indev "${OUTPUT_ISO}" -report_el_torito plain 2>/dev/null || true)"
+if grep -q 'BIOS' <<<"${EL_TORITO}"; then echo "  ✓ entry di boot BIOS presente"; else echo "  ⚠ entry BIOS NON trovata"; fi
+if grep -q 'UEFI' <<<"${EL_TORITO}"; then echo "  ✓ entry di boot UEFI presente"; else echo "  ⚠ entry UEFI NON trovata"; fi
 
 if [[ -n "${SUDO_USER:-}" && -f "${OUTPUT_ISO}" ]]; then
     chown "${SUDO_USER}:${SUDO_USER}" "${OUTPUT_ISO}" 2>/dev/null || true
@@ -233,8 +271,6 @@ if [[ -n "${SUDO_USER:-}" && -f "${OUTPUT_ISO}" ]]; then
 fi
 
 echo "=========================================================="
-echo " Hybrid Live ISO generated successfully!"
-echo " Output: ${OUTPUT_ISO}"
-echo " Test:   ./scripts/qemu.sh --iso"
-echo "         ./scripts/test-iso.sh"
+echo " ISO pronta: ${OUTPUT_ISO} ($(du -h "${OUTPUT_ISO}" | cut -f1))"
+echo " Utente live: ${LIVE_USER} (password: live)"
 echo "=========================================================="

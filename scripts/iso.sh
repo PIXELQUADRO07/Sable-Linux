@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Sable Linux — Live ISO builder (ibrida BIOS + UEFI, KDE live + Calamares netinstall)
+# Sable Linux — Live ISO builder (hybrid BIOS + UEFI, KDE live + Calamares netinstall)
 # ==============================================================================
-# Differenze rispetto alla versione precedente:
-#  - lavora su una COPIA del rootfs (build/live-rootfs): l'immagine .img non viene
-#    più contaminata da live-boot/calamares
-#  - nessun "|| true" sugli step critici: se live-boot non entra nell'initrd, si ferma
-#  - /boot resta dentro lo squashfs (serve al sistema installato)
-#  - l'utente 'sable' viene rimosso dallo squashfs e ricreato a runtime da live-config
-#  - controlla che l'host abbia i moduli GRUB sia BIOS che UEFI
-#  - kernel/initrd = versione più recente, non il primo risultato di find
+# Key improvements:
+#  - Works on a COPY of the rootfs (build/live-rootfs): the .img image is not modified
+#  - No "|| true" on critical steps: halts if live-boot fails to include in initrd
+#  - /boot stays inside squashfs (needed by installed system)
+#  - 'sable' user removed from squashfs and created at runtime by live-config
+#  - Checks host GRUB modules for both BIOS and UEFI
+#  - Kernel/initrd = latest version selection
 # ==============================================================================
 set -Eeuo pipefail
 
@@ -27,26 +26,26 @@ LIVE_ROOT="${BUILD_DIR}/live-rootfs"
 ISO_DIR="${BUILD_DIR}/iso_root"
 VERSION="${SABLE_VERSION:-0.5.0}"
 OUTPUT_ISO="${BUILD_DIR}/sable-${VERSION}-live-amd64.iso"
-SQUASHFS_COMP="${SABLE_SQUASHFS_COMP:-zstd}"     # zstd (veloce) oppure xz (più piccolo)
+SQUASHFS_COMP="${SABLE_SQUASHFS_COMP:-zstd}"     # zstd (fast) or xz (smaller)
 LIVE_USER="${SABLE_DEFAULT_USER:-sable}"
 LIVE_HOSTNAME="${SABLE_DEFAULT_HOSTNAME:-sable}"
 VOLID="SABLE_LIVE"
 
 if [[ "${EUID}" -ne 0 ]]; then
-    echo "Errore: esegui con sudo: sudo $0"
+    echo "Error: run with sudo: sudo $0"
     exit 1
 fi
 
 if [[ ! -e "${ROOTFS}/etc/sable/release" ]]; then
-    echo "Errore: rootfs non trovato o incompleto in ${ROOTFS}. Esegui prima: sudo ./build.sh"
+    echo "Error: rootfs not found or incomplete in ${ROOTFS}. Run first: sudo ./build.sh"
     exit 1
 fi
 if ! find "${ROOTFS}/boot" -maxdepth 1 -name 'vmlinuz-*' -print -quit | grep -q .; then
-    echo "Errore: nessun kernel in ${ROOTFS}/boot. Esegui prima: sudo ./scripts/kernel.sh"
+    echo "Error: no kernel found in ${ROOTFS}/boot. Run first: sudo ./scripts/kernel.sh"
     exit 1
 fi
 
-# --- Tool host ----------------------------------------------------------------
+# --- Host tools ---------------------------------------------------------------
 GRUB_RESCUE_CMD=""
 if command -v grub2-mkrescue >/dev/null 2>&1; then
     GRUB_RESCUE_CMD="grub2-mkrescue"
@@ -60,10 +59,10 @@ for tool in mksquashfs xorriso mformat rsync; do
 done
 [[ -n "${GRUB_RESCUE_CMD}" ]] || MISSING+=("grub-mkrescue/grub2-mkrescue")
 for d in /usr/lib/grub/i386-pc /usr/lib/grub/x86_64-efi; do
-    [[ -d "$d" ]] || MISSING+=("moduli GRUB: $d")
+    [[ -d "$d" ]] || MISSING+=("GRUB modules: $d")
 done
 if [[ ${#MISSING[@]} -gt 0 ]]; then
-    echo "Errore: mancano questi componenti sull'host: ${MISSING[*]}"
+    echo "Error: missing required components on host: ${MISSING[*]}"
     echo "  Fedora: sudo dnf install squashfs-tools xorriso mtools rsync grub2-tools-extra grub2-pc-modules grub2-efi-x64-modules"
     echo "  Debian: sudo apt install squashfs-tools xorriso mtools rsync grub-pc-bin grub-efi-amd64-bin"
     exit 1
@@ -102,16 +101,16 @@ setup_dns() {
 trap umount_live EXIT
 
 echo "=========================================================="
-echo " Sable Linux ${VERSION} — build ISO live (KDE + Calamares netinstall)"
+echo " Sable Linux ${VERSION} — Live ISO build (KDE + Calamares netinstall)"
 echo " Output: ${OUTPUT_ISO}"
 echo "=========================================================="
 
-# --- 1. Copia del rootfs ------------------------------------------------------
-echo "1/6 Copia del rootfs in ${LIVE_ROOT} ..."
+# --- 1. Rootfs Copy -----------------------------------------------------------
+echo "1/6 Copying rootfs to ${LIVE_ROOT} ..."
 "${SCRIPT_DIR}/mount.sh" -u >/dev/null 2>&1 || true
 umount_live
 if mounts_active; then
-    echo "Errore: ci sono ancora mount sotto ${LIVE_ROOT}. Smontali a mano e riprova."
+    echo "Error: active mounts remaining under ${LIVE_ROOT}. Unmount manually and retry."
     exit 1
 fi
 mkdir -p "${LIVE_ROOT}"
@@ -119,8 +118,8 @@ rsync -aHAX --numeric-ids --delete \
     --exclude='/dev/*' --exclude='/proc/*' --exclude='/sys/*' --exclude='/run/*' --exclude='/tmp/*' \
     "${ROOTFS}/" "${LIVE_ROOT}/"
 
-# --- 2. Installazione live-boot + Calamares nella copia -----------------------
-echo "2/6 Installazione live-boot, live-config e Calamares (nessun errore viene ignorato) ..."
+# --- 2. Live-boot + Calamares setup in copy -----------------------------------
+echo "2/6 Installing live-boot, live-config and Calamares ..."
 mount_live
 setup_dns
 
@@ -137,16 +136,16 @@ EOS
 chmod +x "${LIVE_ROOT}/tmp/sable-live-setup.sh"
 chroot "${LIVE_ROOT}" /tmp/sable-live-setup.sh
 
-# --- 3. Configurazione live ---------------------------------------------------
-echo "3/6 Configurazione live (Calamares, autologin SDDM, launcher, rimozione utente di sviluppo) ..."
+# --- 3. Live configuration ----------------------------------------------------
+echo "3/6 Configuring live session (Calamares, SDDM autologin, launcher, dev user cleanup) ..."
 
-# Calamares: copiato DOPO l'installazione del pacchetto (così non viene sovrascritto)
+# Calamares: copied AFTER package installation so it is not overwritten
 if [[ -d "${PROJECT_ROOT}/config/calamares" ]]; then
     mkdir -p "${LIVE_ROOT}/etc/calamares"
     cp -a "${PROJECT_ROOT}/config/calamares/." "${LIVE_ROOT}/etc/calamares/"
 fi
 
-# Autologin SDDM solo nella sessione live (rimosso dal sistema installato da shellprocess_cleanup)
+# SDDM autologin for live session only (removed from installed system by shellprocess_cleanup)
 mkdir -p "${LIVE_ROOT}/etc/sddm.conf.d"
 cat > "${LIVE_ROOT}/etc/sddm.conf.d/zz-sable-live-autologin.conf" << EOS
 [Autologin]
@@ -155,7 +154,7 @@ Session=plasma
 Relogin=false
 EOS
 
-# Launcher dell'installer nel menu (rimosso dal sistema installato)
+# Installer launcher in launcher menu (removed from installed system)
 cat > "${LIVE_ROOT}/usr/share/applications/sable-install.desktop" << 'EOS'
 [Desktop Entry]
 Type=Application
@@ -172,13 +171,13 @@ cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
 set -Eeuo pipefail
 export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
 
-# L'utente di sviluppo NON deve finire nello squashfs: Calamares lo copierebbe
-# nel sistema installato con password nota. Lo crea live-config al boot.
+# Dev user MUST NOT end up in squashfs; Calamares would copy it with default password.
+# live-config creates it at boot time.
 if id "$LIVE_USER" >/dev/null 2>&1; then
     userdel -rf "$LIVE_USER" || true
 fi
 if id "$LIVE_USER" >/dev/null 2>&1; then
-    echo "ERRORE: impossibile rimuovere l'utente $LIVE_USER" >&2
+    echo "ERROR: failed to remove user $LIVE_USER" >&2
     exit 1
 fi
 
@@ -186,10 +185,10 @@ update-initramfs -u -k all
 
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
 if ! lsinitramfs "/boot/initrd.img-${KVER}" | grep -q 'scripts/live'; then
-    echo "ERRORE: live-boot NON è presente nell'initrd di ${KVER}: l'ISO non può avviarsi." >&2
+    echo "ERROR: live-boot NOT present in initrd of ${KVER}: ISO will not boot." >&2
     exit 1
 fi
-echo "OK: live-boot presente nell'initrd (${KVER})"
+echo "OK: live-boot present in initrd (${KVER})"
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /tmp/sable-live-*.sh /root/.bash_history
@@ -202,12 +201,12 @@ chroot "${LIVE_ROOT}" env LIVE_USER="${LIVE_USER}" /tmp/sable-live-finish.sh
 
 umount_live
 if mounts_active; then
-    echo "Errore: mount residui sotto ${LIVE_ROOT}, interrompo prima di creare lo squashfs."
+    echo "Error: active mounts remaining under ${LIVE_ROOT}, stopping before creating squashfs."
     exit 1
 fi
 
-# --- 4. Squashfs --------------------------------------------------------------
-echo "4/6 Creazione squashfs (${SQUASHFS_COMP}) ..."
+# --- 4. Squashfs creation -----------------------------------------------------
+echo "4/6 Creating squashfs (${SQUASHFS_COMP}) ..."
 rm -rf "${ISO_DIR}"
 mkdir -p "${ISO_DIR}/live" "${ISO_DIR}/boot/grub"
 
@@ -221,13 +220,13 @@ mksquashfs "${LIVE_ROOT}" "${ISO_DIR}/live/filesystem.squashfs" "${SQ_OPTS[@]}"
 
 SQ_SIZE="$(stat -c %s "${ISO_DIR}/live/filesystem.squashfs")"
 if (( SQ_SIZE > 4294967295 )); then
-    echo "Attenzione: lo squashfs supera 4 GiB ($((SQ_SIZE / 1048576)) MiB). Funziona, ma per una netinstall conviene alleggerire la base."
+    echo "Warning: squashfs exceeds 4 GiB ($((SQ_SIZE / 1048576)) MiB). Works, but netinstall base should be slimmed down."
 fi
 
-# --- 5. Kernel, initrd e GRUB -------------------------------------------------
-echo "5/6 Kernel, initrd e configurazione GRUB ..."
+# --- 5. Kernel, initrd and GRUB configuration --------------------------------
+echo "5/6 Kernel, initrd and GRUB configuration ..."
 KVER="$(ls -1 "${LIVE_ROOT}"/boot/vmlinuz-* | sed "s|.*/vmlinuz-||" | sort -V | tail -n1)"
-[[ -f "${LIVE_ROOT}/boot/initrd.img-${KVER}" ]] || { echo "Errore: initrd per ${KVER} mancante"; exit 1; }
+[[ -f "${LIVE_ROOT}/boot/initrd.img-${KVER}" ]] || { echo "Error: initrd for ${KVER} missing"; exit 1; }
 cp "${LIVE_ROOT}/boot/vmlinuz-${KVER}" "${ISO_DIR}/live/vmlinuz"
 cp "${LIVE_ROOT}/boot/initrd.img-${KVER}" "${ISO_DIR}/live/initrd.img"
 echo "    kernel: ${KVER}"
@@ -241,29 +240,29 @@ menuentry "Sable Linux Live (KDE Plasma)" {
     initrd /live/initrd.img
 }
 
-menuentry "Sable Linux Live (grafica sicura / nomodeset)" {
+menuentry "Sable Linux Live (Safe Graphics / nomodeset)" {
     linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} nomodeset
     initrd /live/initrd.img
 }
 
-menuentry "Sable Linux Live (carica in RAM)" {
+menuentry "Sable Linux Live (Copy to RAM / toram)" {
     linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet
     initrd /live/initrd.img
 }
 
-menuentry "Sable Linux Live (DEBUG: verboso + seriale)" {
+menuentry "Sable Linux Live (DEBUG: Verbose + Serial)" {
     linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} debug earlyprintk=vga console=tty0 console=ttyS0,115200
     initrd /live/initrd.img
 }
 GRUBEOF
 
-# --- 6. ISO ibrida ------------------------------------------------------------
-echo "6/6 Generazione ISO con ${GRUB_RESCUE_CMD} ..."
+# --- 6. Hybrid ISO creation ---------------------------------------------------
+echo "6/6 Generating ISO with ${GRUB_RESCUE_CMD} ..."
 "${GRUB_RESCUE_CMD}" -o "${OUTPUT_ISO}" "${ISO_DIR}" -- -volid "${VOLID}"
 
 EL_TORITO="$(xorriso -indev "${OUTPUT_ISO}" -report_el_torito plain 2>/dev/null || true)"
-if grep -q 'BIOS' <<<"${EL_TORITO}"; then echo "  ✓ entry di boot BIOS presente"; else echo "  ⚠ entry BIOS NON trovata"; fi
-if grep -q 'UEFI' <<<"${EL_TORITO}"; then echo "  ✓ entry di boot UEFI presente"; else echo "  ⚠ entry UEFI NON trovata"; fi
+if grep -q 'BIOS' <<<"${EL_TORITO}"; then echo "  ✓ BIOS boot entry present"; else echo "  ⚠ BIOS boot entry NOT found"; fi
+if grep -q 'UEFI' <<<"${EL_TORITO}"; then echo "  ✓ UEFI boot entry present"; else echo "  ⚠ UEFI boot entry NOT found"; fi
 
 if [[ -n "${SUDO_USER:-}" && -f "${OUTPUT_ISO}" ]]; then
     chown "${SUDO_USER}:${SUDO_USER}" "${OUTPUT_ISO}" 2>/dev/null || true
@@ -271,6 +270,6 @@ if [[ -n "${SUDO_USER:-}" && -f "${OUTPUT_ISO}" ]]; then
 fi
 
 echo "=========================================================="
-echo " ISO pronta: ${OUTPUT_ISO} ($(du -h "${OUTPUT_ISO}" | cut -f1))"
-echo " Utente live: ${LIVE_USER} (password: live)"
+echo " ISO ready: ${OUTPUT_ISO} ($(du -h "${OUTPUT_ISO}" | cut -f1))"
+echo " Live user: ${LIVE_USER} (password: live)"
 echo "=========================================================="

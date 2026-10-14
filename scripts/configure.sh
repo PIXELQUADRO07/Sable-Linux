@@ -196,8 +196,8 @@ if ! id "${USER_NAME}" >/dev/null 2>&1; then
     useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
     echo "${USER_NAME}:${USER_NAME}" | chpasswd
     usermod -aG sudo "${USER_NAME}"
-    # NOTA: niente "chage -d 0": SDDM non gestisce il cambio password obbligatorio
-    # e il login resterebbe bloccato. Utente di sviluppo: sable / sable.
+    # NOTE: No "chage -d 0": SDDM does not handle forced password expiration properly
+    # and login would freeze. Development user: sable / sable.
     echo "User '${USER_NAME}' created with sudo privileges (dev password: ${USER_NAME})."
 else
     echo "User '${USER_NAME}' already exists."
@@ -217,9 +217,9 @@ if [[ -f "${CONFIG_DIR}/base/hardening.conf" ]]; then
     chmod 644 /etc/sysctl.d/99-sable-hardening.conf
 fi
 
-# I tool di sicurezza NON sono più nella base (ISO troppo pesante): sono un gruppo
-# della netinstall (config/calamares/modules/netinstall.yaml).
-# Per reinstallarli nella base: SABLE_INSTALL_PENTEST=true in config/sable.conf
+# Security tools are no longer in base (ISO size optimization): provided as
+# a netinstall group in config/calamares/modules/netinstall.yaml.
+# To install in base build: set SABLE_INSTALL_PENTEST=true in config/sable.conf
 PENTEST_PKGS=()
 if [[ "${SABLE_INSTALL_PENTEST:-false}" == "true" && -f "${CONFIG_DIR}/tools/packages-pentest.list" ]]; then
     while IFS= read -r pkg || [[ -n "$pkg" ]]; do

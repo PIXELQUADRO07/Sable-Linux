@@ -1,28 +1,28 @@
-# Gruppi installabili da rete durante l'installazione.
-# ATTENZIONE: un nome di pacchetto inesistente fa fallire l'intera installazione.
-# Verifica ogni nome nel chroot con:  apt-cache show <pacchetto>
-- name: "KDE Plasma - applicazioni complete"
-  description: "Suite KDE standard (kde-standard)"
+# Software groups installable via network during installation.
+# WARNING: non-existent package names will cause installation failure.
+# Verify package names in chroot with: apt-cache show <package>
+- name: "KDE Plasma - Complete Application Suite"
+  description: "Standard KDE Desktop Suite (kde-standard)"
   selected: true
   packages:
     - kde-standard
 
-- name: "Internet e comunicazione"
-  description: "Browser web"
+- name: "Internet & Communication"
+  description: "Web Browser"
   selected: true
   packages:
     - firefox-esr
 
-- name: "Ufficio"
-  description: "LibreOffice"
+- name: "Office"
+  description: "LibreOffice Suite"
   selected: false
   packages:
     - libreoffice-writer
     - libreoffice-calc
     - libreoffice-impress
 
-- name: "Sviluppo"
-  description: "Compilatori e strumenti di sviluppo"
+- name: "Development"
+  description: "Compilers and development tools"
   selected: false
   packages:
     - build-essential
@@ -33,12 +33,12 @@
     - python3-venv
 
 - name: "Sable Security Tools"
-  description: "Strumenti di sicurezza informatica (uso lecito/autorizzato)"
+  description: "Cybersecurity and security assessment toolkit"
   selected: false
   expanded: true
   subgroups:
-    - name: "Rete e ricognizione"
-      description: "Scansione e analisi di rete"
+    - name: "Network & Reconnaissance"
+      description: "Network scanning and analysis"
       packages:
         - nmap
         - masscan
@@ -48,8 +48,8 @@
         - dnsenum
         - dnsrecon
         - socat
-    - name: "Web"
-      description: "Test di applicazioni web"
+    - name: "Web Testing"
+      description: "Web application security testing"
       packages:
         - sqlmap
         - nikto
@@ -57,15 +57,15 @@
         - ffuf
         - dirb
         - wfuzz
-    - name: "Password"
-      description: "Audit di password"
+    - name: "Password Audit"
+      description: "Password security audit tools"
       packages:
         - john
         - hashcat
         - hydra
         - medusa
-    - name: "Wireless"
-      description: "Audit di reti wireless"
+    - name: "Wireless Audit"
+      description: "Wireless network testing tools"
       packages:
         - aircrack-ng
         - kismet
@@ -73,7 +73,7 @@
         - hcxtools
         - hcxdumptool
     - name: "Forensics"
-      description: "Analisi forense e recupero dati"
+      description: "Digital forensics and data recovery"
       packages:
         - binwalk
         - foremost

@@ -186,9 +186,11 @@ fi
 update-initramfs -u -k all
 
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
-INITRD_LIST="$(lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null || true)"
-if ! echo "${INITRD_LIST}" | grep -Eq 'live'; then
+INITRD_LIST="$(lsinitramfs "/boot/initrd.img-${KVER}" 2>&1 || true)"
+if ! echo "${INITRD_LIST}" | grep -qE 'live|boot'; then
     echo "ERROR: live-boot NOT present in initrd of ${KVER}: ISO will not boot." >&2
+    echo "lsinitramfs diagnostic output:" >&2
+    echo "${INITRD_LIST}" >&2
     exit 1
 fi
 echo "OK: live-boot present in initrd (${KVER})"

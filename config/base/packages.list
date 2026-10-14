@@ -12,6 +12,8 @@ systemd-sysv
 bash
 coreutils
 util-linux
+zstd
+cpio
 
 # Privilege & User Management
 sudo

@@ -130,7 +130,7 @@ export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
 apt-get update
 apt-get install -y --no-install-recommends \
     live-boot live-config live-config-systemd \
-    rsync squashfs-tools efibootmgr dosfstools e2fsprogs ntfs-3g
+    rsync squashfs-tools efibootmgr dosfstools e2fsprogs ntfs-3g zstd cpio initramfs-tools
 apt-get install -y calamares
 EOS
 chmod +x "${LIVE_ROOT}/tmp/sable-live-setup.sh"
@@ -184,7 +184,7 @@ fi
 update-initramfs -u -k all
 
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
-if ! lsinitramfs "/boot/initrd.img-${KVER}" | grep -q 'scripts/live'; then
+if ! lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -q 'scripts/live'; then
     echo "ERROR: live-boot NOT present in initrd of ${KVER}: ISO will not boot." >&2
     exit 1
 fi

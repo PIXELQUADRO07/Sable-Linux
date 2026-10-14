@@ -1,6 +1,6 @@
 # 🐾 Sable Linux — Full Development Roadmap
 
-## Obiettivo finale
+## Target Architecture
 
 ```text
                          SABLE LINUX
@@ -25,7 +25,7 @@
              QEMU / Hardware         QEMU Dev
 ```
 
-Il processo di build automatizzato finale è:
+Automated build workflow:
 
 ```bash
 git clone <Sable repository>
@@ -36,50 +36,50 @@ sudo ./build.sh --iso
 
 ---
 
-## Filosofia del Progetto
+## Project Philosophy
 
-Sable non è semplicemente:
+Sable is not simply:
 `Debian + wallpaper + logo`
 
-È una distribuzione Debian-based con un proprio sistema di build, configurazione, branding, selezione software, installer Calamares, repository e release system:
+It is a Debian-based distribution with its own build system, configuration, branding, software selection, Calamares installer, repository, and release system:
 
-- **Base upstream:** Debian 13 (Trixie) con Linux kernel, systemd, glibc, dpkg, APT.
-- **Sable layer:** configurazione, branding, installer Calamares (con moduli personalizzati e netinstall opzionale), release system.
+- **Upstream base:** Debian 13 (Trixie) with Linux kernel, systemd, glibc, dpkg, APT.
+- **Sable layer:** Configuration, branding, Calamares installer (with custom modules and optional netinstall), release system.
 
 ---
 
-## Roadmap Completa
+## Complete Roadmap
 
-| # | Milestone | Descrizione | Stato |
+| # | Milestone | Description | Status |
 |---|---|---|---|
-| **0** | **Definizione progetto** | Configurazione iniziale `config/sable.conf` | 🟢 Completato |
-| **1** | **Repository** | Struttura directory, `.gitignore`, documentazione di base | 🟢 Completato |
-| **2** | **Debian bootstrap** | Bootstrap minimale con `debootstrap` (Debian 13 Trixie) | 🟢 Completato |
-| **3** | **Verifica rootfs** | Controllo filesystem e `/etc/os-release`, `/etc/debian_version` | 🟢 Completato |
-| **3.5** | **Architettura & Configurazione** | SSOT `sable.conf`, liste `.list`, profili base/desktop, branding | 🟢 Completato |
-| **4** | **CHROOT environment** | Setup mount virtuali (`/dev`, `/proc`, `/sys`, `/run`) e DNS | 🟢 Completato |
-| **5** | **Configurazione Debian** | Aggiornamento pacchetti base APT (`export LC_ALL=C`) | 🟢 Completato |
-| **6** | **Sable identity** | Personalizzazione `/etc/os-release`, `/etc/hostname`, `/etc/sable` | 🟢 Completato |
-| **7** | **Utente + sudo** | Creazione utente predefinito `sable` e sudoers | 🟢 Completato |
-| **8** | **Primo sistema CLI** | Pacchetti essenziali per shell e networking base | 🟢 Completato |
-| **9** | **Kernel** | Installazione `linux-image-amd64` | 🟢 Completato |
-| **10** | **GRUB** | Configurazione pacchetti GRUB (`grub-pc-bin`, `grub-efi-amd64-bin`, `grub-efi-amd64-signed`, `shim-signed`, `os-prober`) | 🟢 Completato |
-| **11** | **Primo boot QEMU** | Creazione disco `sable.img` e test boot su QEMU | 🟢 Completato |
-| **12** | **Networking** | NetworkManager attivo e configurato | 🟢 Completato |
-| **13** | **SSH** | Server OpenSSH (disabilitato di default in `sable.conf`) | 🟡 Opzionale |
-| **14** | **KDE Plasma** | Installazione `kde-plasma-desktop` e display manager `sddm` | 🟢 Completato |
-| **15** | **Sable Desktop** | Temi KDE, wallpaper, icone, Zsh/Konsole profile, look & feel | 🟢 Completato |
-| **16** | **Branding completo** | Loghi ufficiali SVG, MOTD con ASCII paw, fastfetch | 🟢 Completato |
-| **17** | **Sable packages** | Scheletro pacchetti `.deb` dedicati (`sable-base`, `sable-branding`, `sable-settings`) | 🟡 In corso |
-| **18** | **Sable tools** | Utility CLI proprie (`sable-info`, `sable-update`, `sable-config`) | ⬜ Da fare |
-| **19** | **Automated build** | Orchestratore `./build.sh` integrato a stadi | 🟢 Completato |
-| **20** | **Podman build environment** | Containerfile per build riproducibili e isolate | ⬜ Da fare |
-| **21** | **ISO Live** | Generazione ISO avviabile ibrida BIOS/UEFI | 🟢 Completato |
-| **22** | **Live environment** | Modalità live con utente `live`, Plymouth splash, e launcher "Install Sable" | 🟢 Completato |
-| **23** | **Calamares** | Installer grafico Calamares con moduli personalizzati e netinstall YAML | 🟢 Completato |
-| **24** | **Sable repository** | Repository APT dedicato per aggiornamenti downstream | ⬜ Da fare |
-| **25** | **Updates system** | Flusso di manutenzione pacchetti upstream Debian + Sable repo | ⬜ Da fare |
-| **26** | **Automated tests** | Test automatici (`test-static.sh`, `test-iso.sh`) | 🟢 Completato |
-| **27** | **Hardware testing** | Test bare-metal (Wi-Fi, GPU Intel Arc, Audio, Sleep, Touchpad) | ⬜ Da fare |
-| **28** | **Release candidate** | Versioning semantico `0.9.x` RC | ⬜ Da fare |
-| **29** | **Sable 1.0** | Rilascio stabile Sable Linux 1.0 "Nightfall" | ⬜ Da fare |
+| **0** | **Project definition** | Initial configuration in `config/sable.conf` | 🟢 Completed |
+| **1** | **Repository** | Directory structure, `.gitignore`, core docs | 🟢 Completed |
+| **2** | **Debian bootstrap** | Minimal bootstrap via `debootstrap` (Debian 13 Trixie) | 🟢 Completed |
+| **3** | **Rootfs verification** | Filesystem check and `/etc/os-release`, `/etc/debian_version` | 🟢 Completed |
+| **3.5** | **Architecture & Configuration** | SSOT `sable.conf`, `.list` files, base/desktop profiles, branding | 🟢 Completed |
+| **4** | **CHROOT environment** | Virtual mount setup (`/dev`, `/proc`, `/sys`, `/run`) and DNS | 🟢 Completed |
+| **5** | **Debian configuration** | APT base package upgrades (`export LC_ALL=C`) | 🟢 Completed |
+| **6** | **Sable identity** | Customization of `/etc/os-release`, `/etc/hostname`, `/etc/sable` | 🟢 Completed |
+| **7** | **User + sudo** | Default user `sable` creation and sudoers setup | 🟢 Completed |
+| **8** | **Initial CLI system** | Core shell packages and basic networking | 🟢 Completed |
+| **9** | **Kernel** | `linux-image-amd64` installation | 🟢 Completed |
+| **10** | **GRUB** | GRUB package setup (`grub-pc-bin`, `grub-efi-amd64-bin`, `grub-efi-amd64-signed`, `shim-signed`, `os-prober`) | 🟢 Completed |
+| **11** | **First QEMU boot** | `sable.img` disk creation and QEMU boot testing | 🟢 Completed |
+| **12** | **Networking** | Active NetworkManager configuration | 🟢 Completed |
+| **13** | **SSH** | OpenSSH server (disabled by default in `sable.conf`) | 🟡 Optional |
+| **14** | **KDE Plasma** | `kde-plasma-desktop` and `sddm` display manager installation | 🟢 Completed |
+| **15** | **Sable Desktop** | KDE themes, wallpaper, icons, Zsh/Konsole profile, look & feel | 🟢 Completed |
+| **16** | **Complete branding** | Official SVG logos, MOTD ASCII paw, fastfetch | 🟢 Completed |
+| **17** | **Sable packages** | Skeleton for dedicated `.deb` packages (`sable-base`, `sable-branding`, `sable-settings`) | 🟡 In progress |
+| **18** | **Sable tools** | Custom CLI utilities (`sable-info`, `sable-update`, `sable-config`) | ⬜ To do |
+| **19** | **Automated build** | Stage-integrated `./build.sh` orchestrator | 🟢 Completed |
+| **20** | **Podman build environment** | Containerfile for reproducible and isolated builds | ⬜ To do |
+| **21** | **ISO Live** | Hybrid BIOS/UEFI bootable ISO generation | 🟢 Completed |
+| **22** | **Live environment** | Live mode with `live` user, Plymouth splash, and "Install Sable" launcher | 🟢 Completed |
+| **23** | **Calamares** | Graphical Calamares installer with custom modules and netinstall YAML | 🟢 Completed |
+| **24** | **Sable repository** | Dedicated APT repository for downstream updates | ⬜ To do |
+| **25** | **Updates system** | Maintenance flow for upstream Debian + Sable repo packages | ⬜ To do |
+| **26** | **Automated tests** | Automated test scripts (`test-static.sh`, `test-iso.sh`) | 🟢 Completed |
+| **27** | **Hardware testing** | Bare-metal tests (Wi-Fi, Intel Arc GPU, Audio, Sleep, Touchpad) | ⬜ To do |
+| **28** | **Release candidate** | Semantic versioning `0.9.x` RC | ⬜ To do |
+| **29** | **Sable 1.0** | Sable Linux 1.0 "Nightfall" stable release | ⬜ To do |

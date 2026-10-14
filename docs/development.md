@@ -1,12 +1,12 @@
-# 🛠️ Sable Linux — Guida allo Sviluppo
+# 🛠️ Sable Linux — Development Guide
 
-Questa guida descrive i prerequisiti, il flusso di lavoro e le istruzioni operative per sviluppare Sable Linux sul sistema host.
+This guide outlines prerequisites, workflow, and operational instructions for developing Sable Linux on the host environment.
 
 ---
 
-## 1. Prerequisiti Host
+## 1. Host Prerequisites
 
-Il sistema di sviluppo consigliato è Linux (es. Fedora, Debian o Ubuntu).
+Recommended development environment is Linux (e.g., Fedora, Debian, or Ubuntu).
 
 ### Fedora
 ```bash
@@ -20,38 +20,38 @@ sudo apt install debootstrap qemu-system-x86 podman
 
 ---
 
-## 2. Flusso Operativo Iniziale
+## 2. Initial Workflow
 
-### Milestone 0 & 1: Configurazione e Struttura
-Tutti i parametri centrali del sistema risiedono in `config/sable.conf`:
+### Milestone 0 & 1: Configuration & Structure
+All core system parameters reside in `config/sable.conf`:
 - `SABLE_NAME`
 - `SABLE_VERSION`
 - `SABLE_CODENAME`
-- `DEBIAN_SUITE` (predefinito: `trixie`)
-- `DEBIAN_ARCH` (predefinito: `amd64`)
-- `DEBIAN_MIRROR` (predefinito: `https://deb.debian.org/debian`)
+- `DEBIAN_SUITE` (default: `trixie`)
+- `DEBIAN_ARCH` (default: `amd64`)
+- `DEBIAN_MIRROR` (default: `https://deb.debian.org/debian`)
 
-### Milestone 2: Esecuzione Bootstrap
-Lo script `./scripts/bootstrap.sh` si occupa di inizializzare il filesystem di base minimale tramite `debootstrap --variant=minbase`.
+### Milestone 2: Bootstrap Execution
+The `./scripts/bootstrap.sh` script initializes the minimal base filesystem using `debootstrap --variant=minbase`.
 
 ```bash
 sudo ./scripts/bootstrap.sh
 ```
 
-### Milestone 4 & 5: Gestione Chroot
-Per accedere alla shell dell'ambiente Sable isolato:
+### Milestone 4 & 5: Chroot Management
+To enter the isolated Sable environment shell:
 
-1. **Montare i filesystem virtuali e DNS:**
+1. **Mount virtual filesystems and DNS:**
    ```bash
    sudo ./scripts/mount.sh
    ```
 
-2. **Entrare nel chroot:**
+2. **Enter chroot:**
    ```bash
    sudo ./scripts/chroot.sh
    ```
 
-3. **Operare all'interno del chroot:**
+3. **Operate inside chroot:**
    ```bash
    export HOME=/root
    export LC_ALL=C
@@ -59,7 +59,7 @@ Per accedere alla shell dell'ambiente Sable isolato:
    apt upgrade
    ```
 
-4. **Uscita e smontaggio pulito:**
+4. **Exit and clean unmount:**
    ```bash
    exit
    sudo ./scripts/mount.sh -u
@@ -67,6 +67,6 @@ Per accedere alla shell dell'ambiente Sable isolato:
 
 ---
 
-## 3. Convenzioni Git
-- Ogni modifica o avanzamento di milestone deve avere un proprio commit atomico e descrittivo.
-- Non eseguire push non verificati sulla cronologia remota principale.
+## 3. Git Conventions
+- Each change or milestone progress must have an atomic and descriptive commit.
+- Do not perform unverified pushes to the main remote branch.

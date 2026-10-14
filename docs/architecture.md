@@ -1,11 +1,11 @@
-# 🏛️ Sable Linux — Architettura di Sistema
+# 🏛️ Sable Linux — System Architecture
 
-## 1. Panoramica
-Sable Linux è una distribuzione GNU/Linux indipendente costruita su base Debian (Trixie), ingegnerizzata con un sistema di build proprio, configurazione modulare, identità visiva distinta e ambiente desktop KDE Plasma.
+## 1. Overview
+Sable Linux is an independent GNU/Linux distribution built on a Debian (Trixie) base, engineered with its own build system, modular configuration, distinct visual identity, and KDE Plasma desktop environment.
 
 ---
 
-## 2. Architettura a Livelli
+## 2. Layered Architecture
 
 ```text
 +-------------------------------------------------------------+
@@ -13,7 +13,7 @@ Sable Linux è una distribuzione GNU/Linux indipendente costruita su base Debian
 |          (sable-info, sable-update, sable-config)           |
 +-------------------------------------------------------------+
 |                     Sable Desktop Profile                   |
-|         (KDE Plasma, SDDM, Wayland, Audio Pipewire)         |
+|         (KDE Plasma, SDDM, Wayland, PipeWire Audio)         |
 +-------------------------------------------------------------+
 |                      Sable Base Profile                      |
 |       (systemd, NetworkManager, user management, sudo)      |
@@ -25,37 +25,37 @@ Sable Linux è una distribuzione GNU/Linux indipendente costruita su base Debian
 
 ---
 
-## 3. Separazione dei Profili (Profile Architecture)
+## 3. Profile Architecture
 
-Sable adotta un'architettura a profili configurabile tramite `SABLE_PROFILE`:
+Sable adopts a profile-based architecture configured via `SABLE_PROFILE`:
 
-1. **Profilo `base` (CLI Minimal):**
-   - Destinato a installazioni server, container o diagnostica.
-   - Fornisce esclusivamente il set fondamentale di pacchetti, networking (`NetworkManager`) e sicurezza.
-   - Nessun server grafico o display manager caricato.
+1. **`base` Profile (Minimal CLI):**
+   - Designed for server, container, or diagnostic installations.
+   - Provides exclusively core packages, networking (`NetworkManager`), and security hardening.
+   - No display server or display manager loaded.
 
-2. **Profilo `desktop` (KDE Plasma):**
-   - Costruito come estensione pulita del profilo `base`.
-   - Include KDE Plasma standard, display manager SDDM, stack audio Pipewire e integrazione Wayland.
-
----
-
-## 4. Spazio dei Nomi del Sistema Installato (`/etc/sable/`)
-
-Per rispettare le convenzioni FHS e Debian senza disperdere le informazioni di personalizzazione:
-- **Configurazioni standard Debian/Upstream:** rimangono nei percorsi canonici (`/etc/systemd/`, `/etc/network/`, `/etc/apt/`).
-- **Namespace dedicato Sable (`/etc/sable/`):**
-  - `/etc/sable/release`: Nome della release (`Sable Linux`).
-  - `/etc/sable/version`: Versione semantica (`0.5.0`).
-  - `/etc/sable/codename`: Codename del rilascio (`Nightfall`).
-  - `/etc/sable/build-info`: Timestamp, host di build e profilo compilato.
-  - `/etc/sable/config/`: Snapshot della configurazione di sistema utilizzata durante la build.
+2. **`desktop` Profile (KDE Plasma):**
+   - Built as a clean extension of the `base` profile.
+   - Includes standard KDE Plasma, SDDM display manager, PipeWire audio stack, and Wayland integration.
 
 ---
 
-## 5. Separazione tra Build Configuration e System Configuration
+## 4. Installed System Namespace (`/etc/sable/`)
 
-- **Build Configuration (`config/` nel repository host):**
-  Definisce *come costruire* il sistema (mirror Debian, suite, architettura, profili da abilitare, pacchetti da scaricare).
-- **System Configuration (`/etc/` e `/etc/sable/` nel rootfs):**
-  Definisce *come si comporta* il sistema a runtime una volta avviato dall'utente (servizi attivi, utenti, hostname, temi).
+To comply with FHS and Debian conventions without scattering customization settings:
+- **Standard Debian/Upstream configurations:** remain in canonical paths (`/etc/systemd/`, `/etc/network/`, `/etc/apt/`).
+- **Sable Dedicated Namespace (`/etc/sable/`):**
+  - `/etc/sable/release`: Release name (`Sable Linux`).
+  - `/etc/sable/version`: Semantic version (`0.5.0`).
+  - `/etc/sable/codename`: Release codename (`Nightfall`).
+  - `/etc/sable/build-info`: Timestamp, build host, and compiled profile.
+  - `/etc/sable/config/`: Snapshot of the system configuration used during build.
+
+---
+
+## 5. Build Configuration vs System Configuration Separation
+
+- **Build Configuration (`config/` in host repository):**
+  Defines *how to build* the system (Debian mirror, suite, architecture, enabled profiles, packages to download).
+- **System Configuration (`/etc/` and `/etc/sable/` in rootfs):**
+  Defines *how the system behaves* at runtime when booted by the user (active services, users, hostname, themes).

@@ -1,8 +1,8 @@
-# ⚙️ Sable Linux — Guida alla Configurazione
+# ⚙️ Sable Linux — Configuration Guide
 
 ## 1. Single Source of Truth (`config/sable.conf`)
 
-Tutti i parametri globali di Sable Linux sono accentrati in `config/sable.conf`. Gli script di compilazione e provisioning leggono unicamente questo file come sorgente primaria.
+All global parameters for Sable Linux are centralized in `config/sable.conf`. Build and provisioning scripts rely solely on this file as their primary source.
 
 ```text
                  config/
@@ -22,50 +22,50 @@ Tutti i parametri globali di Sable Linux sono accentrati in `config/sable.conf`.
 
 ---
 
-## 2. Struttura della directory `config/`
+## 2. Directory Structure of `config/`
 
 ```text
 config/
-├── sable.conf               # Variabili globali e identità
+├── sable.conf               # Global variables and system identity
 │
 ├── base/
-│   ├── packages.list        # Elenco pacchetti CLI di base
-│   ├── services.conf        # Servizi abilitati e disabilitati per Base
-│   └── system.conf          # Parametri di default (locale, timezone, utente)
+│   ├── packages.list        # Base CLI package list
+│   ├── services.conf        # Enabled/disabled services for Base
+│   └── system.conf          # Default parameters (locale, timezone, user)
 │
 ├── desktop/
-│   ├── packages.list        # Pacchetti grafici KDE Plasma + SDDM
-│   ├── plasma.conf          # Configurazione desktop session e display manager
-│   └── defaults.conf        # Impostazioni desktop (bluetooth, autologin, ecc.)
+│   ├── packages.list        # Graphical KDE Plasma + SDDM packages
+│   ├── plasma.conf          # Desktop session and display manager configuration
+│   └── defaults.conf        # Desktop settings (bluetooth, autologin, etc.)
 │
 └── branding/
-    ├── branding.conf        # Nomi, colori d'accento e specifiche grafiche
-    └── assets/              # Directory riservata per loghi, icone e ASCII art
+    ├── branding.conf        # Names, accent colors, and asset specifications
+    └── assets/              # Reserved directory for logos, icons, and ASCII art
 ```
 
 ---
 
-## 3. Convenzione dei File `.list`
+## 3. `.list` File Convention
 
-A differenza dei file di configurazione shell, le liste dei pacchetti utilizzano file di testo piano `.list` (`config/base/packages.list`, `config/desktop/packages.list`):
-- I commenti iniziano con `#` e vengono ignorati.
-- Le righe vuote vengono ignorate.
-- Nessun codice shell arbitrario può essere eseguito durante il parsing.
+Unlike shell configuration files, package lists use plain text `.list` files (`config/base/packages.list`, `config/desktop/packages.list`):
+- Comments start with `#` and are ignored.
+- Blank lines are ignored.
+- No arbitrary shell code is executed during parsing.
 
 ---
 
-## 4. Riferimento Variabili Chiave (`sable.conf`)
+## 4. Key Variable Reference (`sable.conf`)
 
-| Variabile | Esempio | Descrizione |
+| Variable | Example | Description |
 |---|---|---|
-| `SABLE_NAME` | `"Sable Linux"` | Nome ufficiale del sistema operativo |
-| `SABLE_ID` | `"sable"` | Identificativo FHS conforme a `/etc/os-release` |
-| `SABLE_VERSION` | `"0.5.0"` | Versione semantica corrente |
-| `SABLE_CODENAME` | `"Nightfall"` | Nome in codice della versione |
-| `SABLE_URL` | `"https://github.com/..."` | URL del progetto |
-| `DEBIAN_SUITE` | `"trixie"` | Suite upstream Debian (13) |
-| `DEBIAN_ARCH` | `"amd64"` | Architettura di destinazione |
-| `SABLE_PROFILE` | `"desktop"` | Profilo da compilare (`base` o `desktop`) |
-| `SABLE_DESKTOP` | `"kde"` | Ambiente desktop predefinito |
-| `SABLE_ENABLE_SSH` | `"false"` | SSH disabilitato di default per sicurezza |
-| `SABLE_ALLOW_ROOT_LOGIN` | `"false"` | Disabilita il login diretto di root |
+| `SABLE_NAME` | `"Sable Linux"` | Official operating system name |
+| `SABLE_ID` | `"sable"` | FHS-compliant identifier for `/etc/os-release` |
+| `SABLE_VERSION` | `"0.5.0"` | Current semantic version |
+| `SABLE_CODENAME` | `"Nightfall"` | Release codename |
+| `SABLE_URL` | `"https://github.com/..."` | Project repository URL |
+| `DEBIAN_SUITE` | `"trixie"` | Upstream Debian suite (13) |
+| `DEBIAN_ARCH` | `"amd64"` | Target architecture |
+| `SABLE_PROFILE` | `"desktop"` | Profile to build (`base` or `desktop`) |
+| `SABLE_DESKTOP` | `"kde"` | Default desktop environment |
+| `SABLE_ENABLE_SSH` | `"false"` | SSH disabled by default for security |
+| `SABLE_ALLOW_ROOT_LOGIN` | `"false"` | Disables direct root login |

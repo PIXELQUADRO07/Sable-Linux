@@ -1,35 +1,35 @@
-# 🎨 Sable Linux — Linee Guida di Branding
+# 🎨 Sable Linux — Branding Guidelines
 
-## 1. Identità e Significato del Nome
+## 1. Identity and Naming Significance
 
-- **Nome:** Sable Linux
-- **Mascotte:** Lo Zibellino (*Martes zibellina* / Sable) — animale elegante, agile, resistente agli ambienti freddi e severi, simbolo di precisione e dinamicità.
-- **Motif Principale:** Zampa dello zibellino (impronta / paw icon).
-- **Codename della v0.1:** *Nightfall* (l'imbrunire, transizione verso tonalità notturne raffinate).
+- **Name:** Sable Linux
+- **Mascot:** Sable (*Martes zibellina*) — an elegant, agile animal resilient to severe environments, symbolizing precision and speed.
+- **Main Motif:** Sable Paw (paw print / paw icon).
+- **Codename (v0.1):** *Nightfall* (the transition towards refined nocturnal shades).
 
 ---
 
-## 2. Tavolozza Colori (Concept)
+## 2. Color Palette (Concept)
 
-| Ruolo | Colore | Codice Esadecimale | Utilizzo |
+| Role | Color Name | Hex Code | Usage |
 |---|---|---|---|
-| Base Scura | Nightfall Charcoal | `#1e1e2e` | Terminale, barre di sistema, Plymouth |
-| Accento Primario | Cool Ice Blue | `#7aa2f7` | Pulsanti, cursori, evidenziazioni attive |
-| Accento Secondario | Twilight Violet | `#bb9af7` | Badge, grafici, elementi di contrasto |
+| Dark Base | Nightfall Charcoal | `#1e1e2e` | Terminal, system bars, Plymouth |
+| Primary Accent | Cool Ice Blue | `#7aa2f7` | Buttons, sliders, active highlights |
+| Secondary Accent | Twilight Violet | `#bb9af7` | Badges, graphs, contrast elements |
 
 ---
 
-## 3. Risorse Grafiche Ufficiali Registrate
+## 3. Official Graphic Assets
 
-Le risorse vettoriali ufficiali e l'arte ASCII sono archiviate in `config/branding/assets/`:
+Official vector assets and ASCII artwork are stored in `config/branding/assets/`:
 
-- **Logo Primario (`sable-linux-logo.svg` / `logo.svg`):**
-  Logo completo ad alta risoluzione con la zampa dello zibellino e la dicitura stilizzata `SABLE LINUX`. Ideale per Plymouth boot splash, SDDM display manager, benvenuto nell'installer Calamares e documentazione.
-- **Simbolo Zampa Chiara (`sable-paw-symbol.svg`):**
-  Rappresentazione del simbolo su sfondo bianco/chiaro per contesti cartacei, documentazione chiara o banner chiari.
-- **Simbolo Zampa Scura Invertita (`sable-paw-symbol-inverted.svg`):**
-  Rappresentazione del simbolo su sfondo scuro. Utilizzata come icona applicazione principale, icona launcher di sistema (`/usr/share/icons/hicolor/scalable/apps/sable-logo.svg`) e icona del menu KDE.
-- **ASCII Art Ufficiale (`ascii-paw.txt`):**
-  Disegno ASCII stilizzato dell'impronta dello zibellino utilizzato nel `/etc/motd` all'accesso alla shell e nel banner informativo di `fastfetch` (`/etc/fastfetch/config.jsonc`).
+- **Primary Logo (`sable-linux-logo.svg` / `logo.svg`):**
+  Full high-resolution logo featuring the sable paw and stylized `SABLE LINUX` wordmark. Used for Plymouth boot splash, SDDM display manager, Calamares welcome screen, and documentation.
+- **Light Paw Symbol (`sable-paw-symbol.svg`):**
+  Light background symbol variant for paper, light documentation, and light banners.
+- **Inverted Dark Paw Symbol (`sable-paw-symbol-inverted.svg`):**
+  Dark background symbol variant. Used as main application icon, system launcher icon (`/usr/share/icons/hicolor/scalable/apps/sable-logo.svg`), and KDE menu icon.
+- **Official ASCII Art (`ascii-paw.txt`):**
+  Stylized ASCII sable paw print used in `/etc/motd` on shell login and in the `fastfetch` banner (`/etc/fastfetch/config.jsonc`).
 
-La configurazione delle variabili visive e dei percorsi risiede in `config/branding/branding.conf`.
+Visual variables and path specifications reside in `config/branding/branding.conf`.

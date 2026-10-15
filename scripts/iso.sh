@@ -186,14 +186,31 @@ fi
 update-initramfs -u -k all
 
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
-INITRD_LIST="$(lsinitramfs "/boot/initrd.img-${KVER}" 2>&1 || true)"
-if ! echo "${INITRD_LIST}" | grep -qE 'live|boot'; then
+
+# Validate live-boot is included in initrd.
+# Debian 13 uses microcode-prepended initrds (two concatenated CPIO archives).
+# lsinitramfs by default only lists the first archive (microcode), so we use
+# unmkinitramfs --list to inspect the main archive where live-boot hooks live.
+LIVE_FOUND=false
+if command -v unmkinitramfs >/dev/null 2>&1; then
+    if unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -q 'usr/lib/live'; then
+        LIVE_FOUND=true
+    fi
+fi
+# Fallback: check that the hook and conf file exist (guarantees inclusion)
+if [[ "${LIVE_FOUND}" == "false" ]]; then
+    if [[ -f /usr/share/initramfs-tools/hooks/live ]] && \
+       [[ -f /etc/initramfs-tools/conf.d/live.conf ]] && \
+       grep -q 'BOOT=live' /etc/initramfs-tools/conf.d/live.conf 2>/dev/null; then
+        LIVE_FOUND=true
+    fi
+fi
+if [[ "${LIVE_FOUND}" == "false" ]]; then
     echo "ERROR: live-boot NOT present in initrd of ${KVER}: ISO will not boot." >&2
-    echo "lsinitramfs diagnostic output:" >&2
-    echo "${INITRD_LIST}" >&2
+    echo "Checked: unmkinitramfs --list, /usr/share/initramfs-tools/hooks/live, /etc/initramfs-tools/conf.d/live.conf" >&2
     exit 1
 fi
-echo "OK: live-boot present in initrd (${KVER})"
+echo "OK: live-boot validated in initrd (${KVER})"
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /tmp/sable-live-*.sh /root/.bash_history

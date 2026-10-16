@@ -6,7 +6,7 @@ RightButton;NoModifier=org.kde.contextmenu
 
 [Containments][1]
 ItemGeometriesHorizontal=
-activityId=1de07a0e-6446-421c-bfc7-0f2a7ebf00c9
+activityId=
 formfactor=0
 immutability=1
 lastScreen=0
@@ -19,7 +19,6 @@ DialogHeight=540
 DialogWidth=720
 
 [Containments][1][General]
-positions={"1280x800":[]}
 
 [Containments][2]
 activityId=

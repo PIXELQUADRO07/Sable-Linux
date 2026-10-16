@@ -27,7 +27,7 @@ ISO_DIR="${BUILD_DIR}/iso_root"
 VERSION="${SABLE_VERSION:-0.5.0}"
 OUTPUT_ISO="${BUILD_DIR}/sable-${VERSION}-live-amd64.iso"
 SQUASHFS_COMP="${SABLE_SQUASHFS_COMP:-zstd}"     # zstd (fast) or xz (smaller)
-LIVE_USER="${SABLE_DEFAULT_USER:-sable}"
+LIVE_USER="${SABLE_LIVE_USER:-live}"
 LIVE_HOSTNAME="${SABLE_DEFAULT_HOSTNAME:-sable}"
 VOLID="SABLE_LIVE"
 
@@ -173,14 +173,15 @@ cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
 set -Eeuo pipefail
 export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
 
-# Dev user MUST NOT end up in squashfs; Calamares would copy it with default password.
-# live-config creates it at boot time.
-if id "$LIVE_USER" >/dev/null 2>&1; then
-    userdel -rf "$LIVE_USER" || true
+# Dev user and live user MUST NOT end up pre-created in squashfs;
+# Calamares would copy them with default password.
+# live-config creates the live user at boot time.
+DEV_USER="${DEV_USER:-sable}"
+if id "$DEV_USER" >/dev/null 2>&1; then
+    userdel -rf "$DEV_USER" || true
 fi
-if id "$LIVE_USER" >/dev/null 2>&1; then
-    echo "ERROR: failed to remove user $LIVE_USER" >&2
-    exit 1
+if id "${LIVE_USER:-live}" >/dev/null 2>&1; then
+    userdel -rf "${LIVE_USER:-live}" || true
 fi
 
 update-initramfs -u -k all
@@ -219,7 +220,7 @@ rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /tmp/sable-live-*.sh /
 find /var/log -type f -exec truncate -s 0 {} +
 EOS
 chmod +x "${LIVE_ROOT}/tmp/sable-live-finish.sh"
-chroot "${LIVE_ROOT}" env LIVE_USER="${LIVE_USER}" /tmp/sable-live-finish.sh
+chroot "${LIVE_ROOT}" env LIVE_USER="${LIVE_USER}" DEV_USER="${SABLE_DEFAULT_USER:-sable}" /tmp/sable-live-finish.sh
 
 umount_live
 if mounts_active; then

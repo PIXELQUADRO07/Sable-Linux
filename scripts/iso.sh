@@ -168,6 +168,8 @@ if [[ -f "${PROJECT_ROOT}/config/live/sable-installer.desktop" ]]; then
     cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/usr/share/applications/sable-installer.desktop"
     cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
     chmod +x "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
+fi
+
 # Plymouth theme setup
 if [[ -d "${PROJECT_ROOT}/config/live/plymouth" ]]; then
     mkdir -p "${LIVE_ROOT}/usr/share/plymouth/themes/sable"

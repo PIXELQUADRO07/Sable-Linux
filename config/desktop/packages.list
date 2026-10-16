@@ -8,6 +8,9 @@
 kde-plasma-desktop
 kwin-x11
 sddm
+sddm-theme-breeze
+breeze-gtk-theme
+kde-gtk-config
 plasma-nm
 kde-config-sddm
 
@@ -37,6 +40,9 @@ wireplumber
 xwayland
 xserver-xorg-core
 xserver-xorg-video-qxl
+xserver-xorg-video-fbdev
+xserver-xorg-video-vesa
+spice-vdagent
 libgl1-mesa-dri
 mesa-vulkan-drivers
 fonts-dejavu-core

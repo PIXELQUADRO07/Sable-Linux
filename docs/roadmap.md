@@ -57,8 +57,8 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 | **Phase 2** | Kernel, Bootloader & First Boot | M9 – M11 | 🟢 **100% Completed** |
 | **Phase 3** | Networking & Connectivity | M12 – M13 | 🟢 **100% Completed** |
 | **Phase 4** | Desktop Environment & Customizations | M14 – M16 | 🟢 **100% Completed** |
-| **Phase 5** | Dedicated Debian Packages & Tools | M17 – M18 | 🟡 **In Progress** |
-| **Phase 6** | Build Automation & Containerization | M19 – M20 | 🟡 **Partially Completed** |
+| **Phase 5** | Dedicated Debian Packages & Tools | M17 – M18 | 🟢 **100% Completed** |
+| **Phase 6** | Build Automation & Containerization | M19 – M20 | 🟢 **100% Completed** |
 | **Phase 7** | Live ISO & Calamares Installer | M21 – M23 | 🟢 **100% Completed** |
 | **Phase 8** | Testing, Infrastructure & 1.0 Release | M24 – M29 | 🟡 **In Progress** |
 
@@ -86,10 +86,10 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 | **14** | **KDE Plasma Desktop** | Complete `kde-standard`, `sddm`, PipeWire, Wayland, Mesa | 🟢 Completed | `scripts/desktop.sh` |
 | **15** | **Sable Desktop Styling** | Breeze Dark theme, Breeze-dark icons, Breeze cursors, lightweight system monitor applets, custom Zsh with matrix green palette, git commit counter, and right-aligned clock | 🟢 Completed | `config/desktop/` and `scripts/desktop.sh` |
 | **16** | **Complete Branding** | Official high-res SVG logos, paw icons, small ASCII art for `fastfetch` and login banners | 🟢 Completed | `config/branding/assets/` |
-| **17** | **Sable Debian Packages** | Native `.deb` packages (`sable-base`, `sable-branding`, `sable-settings`) | 🟡 In Progress | Directory skeletons created in `packages/` |
-| **18** | **Sable CLI Utilities** | Custom system tools: `sable-info`, `sable-update`, `sable-config` | ⬜ To do | Scheduled for Milestone 18 |
+| **17** | **Sable Debian Packages** | Native `.deb` packages (`sable-base`, `sable-branding`, `sable-settings`) | 🟢 Completed | Full Debian source package definitions in `packages/` |
+| **18** | **Sable CLI Utilities** | Custom system tools: `sable-info`, `sable-update`, `sable-config` | 🟢 Completed | Installed in `/usr/bin/` via `packages/sable-base` |
 | **19** | **Automated Master Build** | 7-stage master orchestrator `./build.sh` with visual progress bar and centralized logging | 🟢 Completed | `build.sh` |
-| **20** | **Podman Container Environment** | `Containerfile` for rootless, reproducible builds on any host | ⬜ To do | Container isolation workflow |
+| **20** | **Podman Container Environment** | `Containerfile` for rootless, reproducible builds on any host | 🟢 Completed | `containers/Containerfile` |
 | **21** | **Live Hybrid ISO** | Bootable BIOS + UEFI live ISO with zstd/xz squashfs | 🟢 Completed | `scripts/iso.sh` |
 | **22** | **Live Session & Plymouth** | Autologin for `live` user, splash screen, launcher icon | 🟢 Completed | `config/live/` and `scripts/iso.sh` |
 | **23** | **Calamares Installer** | Full graphical installer with branded slides and optional netinstall software packages | 🟢 Completed | `config/calamares/` |
@@ -117,30 +117,21 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
    - Hybrid BIOS/UEFI bootable ISO generator using `grub2-mkrescue` and `mksquashfs`.
    - Calamares installer configured with `sable` branding, system installation stages (`removeuser`, cleanup), and optional netinstall software categories (Office, Development, Cybersecurity tools).
    - Dedicated Plymouth `sable` boot splash integration with `quiet splash` in GRUB.
-5. **Master Orchestrator**:
+5. **Master Orchestrator & Containerization**:
    - `./build.sh` master pipeline with incremental execution, progress tracking, and error logging.
-   - Live ISO detection bug resolved for Debian 13 microcode-prepended initrds.
+   - Containerized build workflow via `containers/Containerfile` (M20).
+6. **Native Packaging & CLI Suite**:
+   - Debian packaging layout for `sable-base`, `sable-branding`, and `sable-settings` (M17).
+   - Official CLI suite: `sable-info`, `sable-update`, `sable-config` (M18).
 
 ### 📋 Pending Next Steps (Missing Work)
 
-#### 1. Milestone 17 & 18 — Native Sable Packages & CLI Tools
-- Package the custom configs, themes, and branding into native `.deb` packages via `dpkg-buildpackage`:
-  - `sable-base`: System configuration, `/etc/os-release`, MOTD, fastfetch config.
-  - `sable-branding`: Vector assets, wallpapers, themes, icons.
-  - `sable-desktop-settings`: Skel configuration for KDE Plasma and Zsh.
-- Develop custom CLI utilities:
-  - `sable-info`: Custom system information summary.
-  - `sable-update`: Streamlined system and package updater.
-  - `sable-config`: System configuration manager.
-
-#### 2. Milestone 20 — Podman Isolated Build Environment
-- Provide `containers/Containerfile` allowing non-root developers to build Sable Linux without host dependencies.
-
-#### 3. Milestone 24 & 25 — APT Repository Infrastructure
+#### 1. Milestone 24 & 25 — APT Repository Infrastructure
 - Set up an APT repository hosting Sable packages (e.g., via GitHub Releases/Pages or dedicated server using `reprepro`).
+- Upstream synchronization automation.
 
-#### 4. Milestone 27 — Bare-Metal Hardware Testing
+#### 2. Milestone 27 — Bare-Metal Hardware Testing
 - Test boot and hardware drivers on physical machine (Intel Arc GPU acceleration, Wi-Fi 6E/7, PipeWire Bluetooth/Speakers, Touchpad gestures, Power management).
 
-#### 5. Milestone 28 & 29 — Stabilization & 1.0 "Nightfall" Release
+#### 3. Milestone 28 & 29 — Stabilization & 1.0 "Nightfall" Release
 - Freeze package list, run static verification checks, and cut the 1.0 stable release ISO.

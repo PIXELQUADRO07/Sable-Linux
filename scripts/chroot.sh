@@ -33,6 +33,11 @@ if [[ -d "${PROJECT_ROOT}/config" ]]; then
     cp -a "${PROJECT_ROOT}/config/." "${ROOTFS}/root/config/"
 fi
 
+if [[ -d "${PROJECT_ROOT}/packages" ]]; then
+    mkdir -p "${ROOTFS}/root/packages"
+    cp -a "${PROJECT_ROOT}/packages/." "${ROOTFS}/root/packages/"
+fi
+
 if [[ $# -gt 0 ]]; then
     trap '"${SCRIPT_DIR}/mount.sh" -u >/dev/null 2>&1 || true' EXIT
     chroot "${ROOTFS}" "$@"

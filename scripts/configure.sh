@@ -118,6 +118,17 @@ if [[ -f "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" ]]; then
     cp "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" /usr/share/pixmaps/sable-logo.svg
 fi
 
+# Install Sable CLI utilities (sable-info, sable-update, sable-config)
+if [[ -d "/root/packages/sable-base/usr/bin" ]]; then
+    mkdir -p /usr/bin
+    cp -a /root/packages/sable-base/usr/bin/. /usr/bin/
+    chmod +x /usr/bin/sable-info /usr/bin/sable-update /usr/bin/sable-config 2>/dev/null || true
+elif [[ -d "${CONFIG_DIR}/../packages/sable-base/usr/bin" ]]; then
+    mkdir -p /usr/bin
+    cp -a "${CONFIG_DIR}/../packages/sable-base/usr/bin/." /usr/bin/
+    chmod +x /usr/bin/sable-info /usr/bin/sable-update /usr/bin/sable-config 2>/dev/null || true
+fi
+
 # Configure /etc/motd
 if [[ -f "${CONFIG_DIR}/branding/assets/ascii-paw.txt" ]]; then
     {

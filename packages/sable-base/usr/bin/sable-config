@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Sable Linux — System Configuration Manager (sable-config)
+# ==============================================================================
+set -Eeuo pipefail
+
+VERSION="0.6.0"
+
+show_help() {
+    cat << 'EOF'
+Usage: sable-config [COMMAND] [ARGUMENTS]
+
+Commands:
+  status                     Display overall system and service configuration
+  hostname [NAME]            Show or change system hostname
+  ssh [enable|disable|status] Manage OpenSSH server service
+  firewall [enable|disable|status] Manage UFW firewall service
+  timezone [ZONE]            Show or set system timezone (e.g. UTC, Europe/Rome)
+  -v, --version              Show version of sable-config
+  -h, --help                 Show this help message
+
+Mutating commands require root privileges (sudo).
+EOF
+}
+
+BOLD="\033[1m"
+RESET="\033[0m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+CYAN="\033[36m"
+RED="\033[31m"
+DIM="\033[2m"
+
+if [[ ! -t 1 ]]; then
+    BOLD=""
+    RESET=""
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    RED=""
+    DIM=""
+fi
+
+require_root() {
+    if [[ "${EUID}" -ne 0 ]]; then
+        echo -e "${RED}${BOLD}Error:${RESET} This operation requires root privileges:"
+        echo "  sudo sable-config $*"
+        exit 1
+    fi
+}
+
+cmd_status() {
+    local host tz loc ssh_state ufw_state
+    host="$(hostname 2>/dev/null || cat /etc/hostname 2>/dev/null || echo "unknown")"
+    tz="$(cat /etc/timezone 2>/dev/null || readlink /etc/localtime 2>/dev/null | sed 's|.*/zoneinfo/||' || echo "unknown")"
+    loc="${LANG:-$(grep -E '^LANG=' /etc/default/locale 2>/dev/null | cut -d= -f2 || echo "unknown")}"
+
+    if systemctl is-active ssh.service >/dev/null 2>&1; then
+        ssh_state="${GREEN}active${RESET}"
+    elif systemctl is-enabled ssh.service >/dev/null 2>&1; then
+        ssh_state="${YELLOW}enabled (inactive)${RESET}"
+    else
+        ssh_state="${DIM}disabled${RESET}"
+    fi
+
+    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qw "active"; then
+        ufw_state="${GREEN}active${RESET}"
+    else
+        ufw_state="${DIM}inactive${RESET}"
+    fi
+
+    echo -e "${CYAN}${BOLD}🐾 Sable Linux System Configuration${RESET}"
+    echo -e "${DIM}----------------------------------------${RESET}"
+    echo -e " ${BOLD}Hostname:${RESET}     ${host}"
+    echo -e " ${BOLD}Timezone:${RESET}     ${tz}"
+    echo -e " ${BOLD}Locale:${RESET}       ${loc}"
+    echo -e " ${BOLD}SSH Server:${RESET}   ${ssh_state}"
+    echo -e " ${BOLD}Firewall (UFW):${RESET} ${ufw_state}"
+    echo -e "${DIM}----------------------------------------${RESET}"
+}
+
+cmd_hostname() {
+    if [[ $# -eq 0 ]]; then
+        hostname
+        return 0
+    fi
+    require_root "hostname" "$@"
+    local new_host="$1"
+    local old_host
+    old_host="$(hostname 2>/dev/null || echo "sable")"
+
+    echo "${new_host}" > /etc/hostname
+    if command -v hostnamectl >/dev/null 2>&1 && systemctl is-active dbus >/dev/null 2>&1; then
+        hostnamectl set-hostname "${new_host}" || hostname "${new_host}"
+    else
+        hostname "${new_host}" 2>/dev/null || true
+    fi
+
+    if [[ -f /etc/hosts ]]; then
+        sed -i "s/127\.0\.1\.1\s\+.*/127.0.1.1       ${new_host}/" /etc/hosts || true
+    fi
+    echo -e "${GREEN}✓ Hostname changed from '${old_host}' to '${new_host}'.${RESET}"
+}
+
+cmd_ssh() {
+    local action="${1:-status}"
+    case "${action}" in
+        status)
+            systemctl status ssh.service 2>/dev/null || echo "SSH service not found or not active."
+            ;;
+        enable)
+            require_root "ssh enable"
+            systemctl enable --now ssh.service
+            echo -e "${GREEN}✓ OpenSSH service enabled and started.${RESET}"
+            ;;
+        disable)
+            require_root "ssh disable"
+            systemctl disable --now ssh.service 2>/dev/null || true
+            echo -e "${YELLOW}✓ OpenSSH service stopped and disabled.${RESET}"
+            ;;
+        *)
+            echo "Usage: sable-config ssh [enable|disable|status]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_firewall() {
+    local action="${1:-status}"
+    if ! command -v ufw >/dev/null 2>&1; then
+        echo -e "${RED}Error: ufw is not installed.${RESET}" >&2
+        exit 1
+    fi
+    case "${action}" in
+        status)
+            ufw status verbose
+            ;;
+        enable)
+            require_root "firewall enable"
+            ufw --force enable
+            echo -e "${GREEN}✓ UFW firewall enabled.${RESET}"
+            ;;
+        disable)
+            require_root "firewall disable"
+            ufw disable
+            echo -e "${YELLOW}✓ UFW firewall disabled.${RESET}"
+            ;;
+        *)
+            echo "Usage: sable-config firewall [enable|disable|status]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_timezone() {
+    if [[ $# -eq 0 ]]; then
+        cat /etc/timezone 2>/dev/null || readlink /etc/localtime | sed 's|.*/zoneinfo/||'
+        return 0
+    fi
+    require_root "timezone" "$@"
+    local new_tz="$1"
+    if [[ ! -f "/usr/share/zoneinfo/${new_tz}" ]]; then
+        echo -e "${RED}Error: timezone '${new_tz}' does not exist in /usr/share/zoneinfo/${RESET}" >&2
+        exit 1
+    fi
+    ln -sf "/usr/share/zoneinfo/${new_tz}" /etc/localtime
+    echo "${new_tz}" > /etc/timezone
+    echo -e "${GREEN}✓ Timezone set to '${new_tz}'.${RESET}"
+}
+
+if [[ $# -eq 0 ]]; then
+    cmd_status
+    exit 0
+fi
+
+CMD="$1"
+shift
+
+case "${CMD}" in
+    status) cmd_status ;;
+    hostname) cmd_hostname "$@" ;;
+    ssh) cmd_ssh "$@" ;;
+    firewall) cmd_firewall "$@" ;;
+    timezone) cmd_timezone "$@" ;;
+    -v|--version) echo "sable-config v${VERSION}"; exit 0 ;;
+    -h|--help) show_help; exit 0 ;;
+    *) echo "Unknown command: ${CMD}" >&2; show_help >&2; exit 1 ;;
+esac

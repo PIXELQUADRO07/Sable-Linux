@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Sable Linux — System Information Utility (sable-info)
+# ==============================================================================
+set -Eeuo pipefail
+
+VERSION="0.6.0"
+
+show_help() {
+    cat << 'EOF'
+Usage: sable-info [OPTIONS]
+
+Options:
+  -j, --json     Output system information in JSON format
+  -v, --version  Show version of sable-info
+  -h, --help     Show this help message
+
+Displays operating system identity, kernel, desktop session, and hardware info.
+EOF
+}
+
+format_bytes() {
+    local b="$1"
+    if (( b >= 1073741824 )); then
+        awk "BEGIN {printf \"%.2f GiB\", $b / 1073741824}"
+    elif (( b >= 1048576 )); then
+        awk "BEGIN {printf \"%.2f MiB\", $b / 1048576}"
+    else
+        awk "BEGIN {printf \"%.2f KiB\", $b / 1024}"
+    fi
+}
+
+get_info() {
+    NAME="Sable Linux"
+    [[ -f /etc/sable/release ]] && NAME="$(cat /etc/sable/release)"
+    VER="0.6.0"
+    [[ -f /etc/sable/version ]] && VER="$(cat /etc/sable/version)"
+    CODENAME="Nightfall"
+    [[ -f /etc/sable/codename ]] && CODENAME="$(cat /etc/sable/codename)"
+
+    KERNEL="$(uname -r)"
+    ARCH="$(uname -m)"
+    HOST="$(hostname)"
+
+    UPTIME_SEC="$(cut -d. -f1 /proc/uptime 2>/dev/null || echo 0)"
+    UPTIME_DAYS=$(( UPTIME_SEC / 86400 ))
+    UPTIME_HOURS=$(( (UPTIME_SEC % 86400) / 3600 ))
+    UPTIME_MINS=$(( (UPTIME_SEC % 3600) / 60 ))
+    UPTIME_STR=""
+    (( UPTIME_DAYS > 0 )) && UPTIME_STR="${UPTIME_DAYS}d "
+    (( UPTIME_HOURS > 0 || UPTIME_DAYS > 0 )) && UPTIME_STR+="${UPTIME_HOURS}h "
+    UPTIME_STR+="${UPTIME_MINS}m"
+
+    MEM_TOTAL_KB="$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)"
+    MEM_AVAIL_KB="$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)"
+    MEM_USED_KB=$(( MEM_TOTAL_KB - MEM_AVAIL_KB ))
+    MEM_TOTAL="$(format_bytes $(( MEM_TOTAL_KB * 1024 )))"
+    MEM_USED="$(format_bytes $(( MEM_USED_KB * 1024 )))"
+
+    SESSION_TYPE="${XDG_SESSION_TYPE:-unknown}"
+    DE="${XDG_CURRENT_DESKTOP:-KDE}"
+    if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
+        SESSION_TYPE="tty/headless"
+    fi
+
+    LIVE_MODE="Installed System"
+    if grep -qw "boot=live" /proc/cmdline 2>/dev/null || [[ -d /lib/live/mount ]]; then
+        LIVE_MODE="Live ISO Session"
+    fi
+}
+
+output_json() {
+    get_info
+    cat << EOF
+{
+  "os": {
+    "name": "${NAME}",
+    "version": "${VER}",
+    "codename": "${CODENAME}",
+    "mode": "${LIVE_MODE}"
+  },
+  "system": {
+    "hostname": "${HOST}",
+    "kernel": "${KERNEL}",
+    "architecture": "${ARCH}",
+    "uptime": "${UPTIME_STR}"
+  },
+  "memory": {
+    "total": "${MEM_TOTAL}",
+    "used": "${MEM_USED}"
+  },
+  "desktop": {
+    "environment": "${DE}",
+    "session_type": "${SESSION_TYPE}"
+  }
+}
+EOF
+}
+
+output_text() {
+    get_info
+    BOLD="\033[1m"
+    RESET="\033[0m"
+    CYAN="\033[36m"
+    GREEN="\033[32m"
+    DIM="\033[2m"
+
+    if [[ ! -t 1 ]]; then
+        BOLD=""
+        RESET=""
+        CYAN=""
+        GREEN=""
+        DIM=""
+    fi
+
+    echo -e "${CYAN}${BOLD}🐾 ${NAME} ${VER} (${CODENAME})${RESET}"
+    echo -e "${DIM}----------------------------------------${RESET}"
+    echo -e " ${BOLD}Host:${RESET}         ${HOST}"
+    echo -e " ${BOLD}Kernel:${RESET}       ${KERNEL} (${ARCH})"
+    echo -e " ${BOLD}Session:${RESET}      ${DE} (${SESSION_TYPE})"
+    echo -e " ${BOLD}Memory:${RESET}       ${MEM_USED} / ${MEM_TOTAL}"
+    echo -e " ${BOLD}Uptime:${RESET}       ${UPTIME_STR}"
+    echo -e " ${BOLD}Status:${RESET}       ${GREEN}${LIVE_MODE}${RESET}"
+    echo -e "${DIM}----------------------------------------${RESET}"
+}
+
+OUTPUT_FORMAT="text"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -j|--json) OUTPUT_FORMAT="json"; shift ;;
+        -v|--version) echo "sable-info v${VERSION}"; exit 0 ;;
+        -h|--help) show_help; exit 0 ;;
+        *) echo "Unknown option: $1" >&2; show_help >&2; exit 1 ;;
+    esac
+done
+
+if [[ "${OUTPUT_FORMAT}" == "json" ]]; then
+    output_json
+else
+    output_text
+fi

@@ -226,8 +226,9 @@ if [[ "${IMAGE_ONLY}" == "true" && -f "${ROOTFS}/etc/sable/release" ]]; then
     log_info "Image-only requested. Skipping base configuration."
 else
     log_step "Syncing configuration overlays and running configuration inside chroot..."
-    mkdir -p "${ROOTFS}/root/config"
+    mkdir -p "${ROOTFS}/root/config" "${ROOTFS}/root/packages"
     rsync -aHAX "${PROJECT_ROOT}/config/" "${ROOTFS}/root/config/"
+    rsync -aHAX "${PROJECT_ROOT}/packages/" "${ROOTFS}/root/packages/"
     if ! "${SCRIPTS_DIR}/chroot.sh" /root/configure.sh >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
         echo -e "${RED}System configuration failed.${RESET}"
         exit 1

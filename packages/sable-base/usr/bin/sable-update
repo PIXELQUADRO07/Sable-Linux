@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Sable Linux — System & Package Update Utility (sable-update)
+# ==============================================================================
+set -Eeuo pipefail
+
+VERSION="0.6.0"
+
+show_help() {
+    cat << 'EOF'
+Usage: sable-update [OPTIONS]
+
+Options:
+  -c, --check-only   Check for available updates without applying them
+  -y, --yes          Assume yes to all prompts and run non-interactively
+  -v, --version      Show version of sable-update
+  -h, --help         Show this help message
+
+Updates APT package repositories, performs safe system upgrades, cleans up
+obsolete packages, and updates Flatpak runtimes if available.
+EOF
+}
+
+CHECK_ONLY=false
+ASSUME_YES=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -c|--check-only) CHECK_ONLY=true; shift ;;
+        -y|--yes) ASSUME_YES=true; shift ;;
+        -v|--version) echo "sable-update v${VERSION}"; exit 0 ;;
+        -h|--help) show_help; exit 0 ;;
+        *) echo "Unknown option: $1" >&2; show_help >&2; exit 1 ;;
+    esac
+done
+
+BOLD="\033[1m"
+RESET="\033[0m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+CYAN="\033[36m"
+RED="\033[31m"
+
+if [[ ! -t 1 ]]; then
+    BOLD=""
+    RESET=""
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    RED=""
+fi
+
+if [[ "${CHECK_ONLY}" == "true" ]]; then
+    echo -e "${CYAN}${BOLD}🐾 Sable Linux — Checking for Updates...${RESET}"
+    if [[ "${EUID}" -ne 0 ]]; then
+        echo -e "${YELLOW}Note: Running as non-root, checking cached repository lists.${RESET}"
+    else
+        apt-get update -qq
+    fi
+    UPGRADES="$(apt-get --just-print upgrade 2>/dev/null | grep -E '^Inst ' | wc -l || echo 0)"
+    if (( UPGRADES > 0 )); then
+        echo -e "${GREEN}${BOLD}${UPGRADES} package update(s) available.${RESET}"
+        apt-get --just-print upgrade | grep -E '^Inst ' | awk '{print "  • " $2 " (" $3 " -> " $4 ")"}'
+    else
+        echo -e "${GREEN}✓ System is completely up to date.${RESET}"
+    fi
+    exit 0
+fi
+
+if [[ "${EUID}" -ne 0 ]]; then
+    echo -e "${RED}${BOLD}Error:${RESET} sable-update must be run as root or with sudo:"
+    echo "  sudo sable-update"
+    exit 1
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS=()
+if [[ "${ASSUME_YES}" == "true" ]]; then
+    APT_OPTS+=("-y")
+fi
+
+echo -e "${CYAN}${BOLD}==========================================================${RESET}"
+echo -e "${CYAN}${BOLD} 🐾 Sable Linux System Updater${RESET}"
+echo -e "${CYAN}${BOLD}==========================================================${RESET}"
+
+echo -e "\n${YELLOW}--> [1/4] Refreshing package lists...${RESET}"
+apt-get update
+
+echo -e "\n${YELLOW}--> [2/4] Upgrading packages...${RESET}"
+apt-get dist-upgrade "${APT_OPTS[@]}" \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold"
+
+echo -e "\n${YELLOW}--> [3/4] Removing obsolete dependencies & cleaning cache...${RESET}"
+apt-get autoremove --purge "${APT_OPTS[@]}"
+apt-get clean
+
+if command -v flatpak >/dev/null 2>&1; then
+    echo -e "\n${YELLOW}--> [4/4] Updating Flatpak runtimes and applications...${RESET}"
+    flatpak update "${APT_OPTS[@]}" 2>/dev/null || true
+else
+    echo -e "\n${YELLOW}--> [4/4] Flatpak not installed, skipping application runtimes.${RESET}"
+fi
+
+echo -e "\n${GREEN}${BOLD}==========================================================${RESET}"
+echo -e "${GREEN}${BOLD} ✓ System update completed successfully!${RESET}"
+echo -e "${GREEN}${BOLD}==========================================================${RESET}"
+
+if [[ -f /var/run/reboot-required ]]; then
+    echo -e "\n${RED}${BOLD}⚠ Notice: A system restart is required to apply kernel or core library updates.${RESET}"
+fi

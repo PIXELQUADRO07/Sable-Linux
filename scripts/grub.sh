@@ -34,8 +34,20 @@ install_grub_in_chroot() {
         os-prober \
         dosfstools
 
+    # Install Sable GRUB theme
+    if [[ -d "/root/config/branding/grub/themes/sable" ]]; then
+        mkdir -p /boot/grub/themes/sable
+        cp -a /root/config/branding/grub/themes/sable/. /boot/grub/themes/sable/
+        if [[ -f /etc/default/grub ]]; then
+            sed -i 's|^#\?GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/sable/theme.txt"|' /etc/default/grub
+            if ! grep -q 'GRUB_THEME=' /etc/default/grub; then
+                echo 'GRUB_THEME="/boot/grub/themes/sable/theme.txt"' >> /etc/default/grub
+            fi
+        fi
+    fi
+
     echo
-    echo "GRUB packages successfully installed."
+    echo "GRUB packages and Sable theme successfully installed."
     echo "=========================================================="
 }
 

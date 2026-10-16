@@ -1,0 +1,66 @@
+# ==============================================================================
+# Sable Linux — Official GRUB Theme (Nightfall)
+# ==============================================================================
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#0d0e17"
+terminal-font: "Unifont Regular 16"
+
+# Sable Logo prominently centered at the top
++ image {
+    top = 10%
+    left = 50%-80
+    width = 160
+    height = 160
+    file = "logo.png"
+}
+
+# Distro Title label under logo
++ label {
+    top = 10%+170
+    left = 0
+    width = 100%
+    align = "center"
+    text = "Sable Linux 0.6.0 (Nightfall)"
+    color = "#cdd6f4"
+    font = "Unifont Regular 16"
+}
+
+# Central Boot Menu
++ boot_menu {
+    top = 42%
+    left = 25%
+    width = 50%
+    height = 36%
+    item_color = "#9399b2"
+    selected_item_color = "#ffffff"
+    item_font = "Unifont Regular 16"
+    selected_item_font = "Unifont Regular 16"
+    item_height = 36
+    item_padding = 6
+    item_spacing = 6
+    selected_item_pixmap_style = "select_*.png"
+}
+
+# Timeout countdown label
++ label {
+    id = "__timeout__"
+    top = 82%
+    left = 0
+    width = 100%
+    align = "center"
+    text = "Booting in %d seconds..."
+    color = "#7aa2f7"
+    font = "Unifont Regular 16"
+}
+
+# Navigation hints
++ label {
+    top = 87%
+    left = 0
+    width = 100%
+    align = "center"
+    text = "Use [↑] and [↓] to select, [Enter] to boot, [e] to edit"
+    color = "#6c7086"
+    font = "Unifont Regular 16"
+}

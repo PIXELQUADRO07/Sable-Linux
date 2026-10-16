@@ -170,31 +170,39 @@ if [[ -f "${PROJECT_ROOT}/config/live/sable-installer.desktop" ]]; then
     chmod +x "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
 fi
 
-# Plymouth theme setup
-if [[ -d "${PROJECT_ROOT}/config/live/plymouth" ]]; then
-    mkdir -p "${LIVE_ROOT}/usr/share/plymouth/themes/sable"
-    cp -a "${PROJECT_ROOT}/config/live/plymouth/." "${LIVE_ROOT}/usr/share/plymouth/themes/sable/"
-fi
-
 cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
 #!/bin/bash
 set -Eeuo pipefail
 export DEBIAN_FRONTEND=noninteractive LC_ALL=C HOME=/root
 
-# Dev user and live user MUST NOT end up pre-created in squashfs;
-# Calamares would copy them with default password.
-# live-config creates the live user at boot time.
+# Dev user MUST NOT persist in squashfs (Calamares would copy it with default password)
 DEV_USER="${DEV_USER:-sable}"
 if id "$DEV_USER" >/dev/null 2>&1; then
     userdel -rf "$DEV_USER" || true
 fi
-if id "${LIVE_USER:-live}" >/dev/null 2>&1; then
-    userdel -rf "${LIVE_USER:-live}" || true
+
+# Pre-create 'live' user with credentials (live:live) and passwordless sudo
+# for reliable SDDM autologin. (Calamares removeuser will delete it on disk install)
+LIVE_USER="${LIVE_USER:-live}"
+LIVE_SHELL="/bin/bash"
+if command -v zsh >/dev/null 2>&1; then
+    LIVE_SHELL="$(command -v zsh)"
 fi
 
-if command -v plymouth-set-default-theme >/dev/null 2>&1; then
-    plymouth-set-default-theme -R sable 2>/dev/null || plymouth-set-default-theme sable 2>/dev/null || true
+if ! id "$LIVE_USER" >/dev/null 2>&1; then
+    useradd -m -s "${LIVE_SHELL}" -G sudo,audio,video,plugdev,netdev,input,cdrom "$LIVE_USER"
+else
+    usermod -s "${LIVE_SHELL}" -a -G sudo,audio,video,plugdev,netdev,input,cdrom "$LIVE_USER"
 fi
+echo "${LIVE_USER}:live" | chpasswd 2>/dev/null
+mkdir -p /etc/sudoers.d
+echo "${LIVE_USER} ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/00-${LIVE_USER}"
+chmod 0440 "/etc/sudoers.d/00-${LIVE_USER}"
+
+# Ensure skel configurations are pre-populated in /home/live
+mkdir -p "/home/${LIVE_USER}"
+cp -a /etc/skel/. "/home/${LIVE_USER}/" 2>/dev/null || true
+chown -R "${LIVE_USER}:${LIVE_USER}" "/home/${LIVE_USER}"
 
 update-initramfs -u -k all
 
@@ -266,27 +274,55 @@ cp "${LIVE_ROOT}/boot/vmlinuz-${KVER}" "${ISO_DIR}/live/vmlinuz"
 cp "${LIVE_ROOT}/boot/initrd.img-${KVER}" "${ISO_DIR}/live/initrd.img"
 echo "    kernel: ${KVER}"
 
+# Install Sable GRUB theme and font
+mkdir -p "${ISO_DIR}/boot/grub/themes/sable" "${ISO_DIR}/boot/grub/fonts"
+if [[ -d "${PROJECT_ROOT}/config/branding/grub/themes/sable" ]]; then
+    cp -a "${PROJECT_ROOT}/config/branding/grub/themes/sable/." "${ISO_DIR}/boot/grub/themes/sable/"
+    if [[ -f "${PROJECT_ROOT}/config/branding/grub/themes/sable/unicode.pf2" ]]; then
+        cp "${PROJECT_ROOT}/config/branding/grub/themes/sable/unicode.pf2" "${ISO_DIR}/boot/grub/fonts/unicode.pf2"
+    fi
+fi
+
 cat > "${ISO_DIR}/boot/grub/grub.cfg" << GRUBEOF
 set default=0
 set timeout=5
 
+# Graphic mode and theme configuration
+set gfxmode=auto
+insmod efi_gop
+insmod efi_uga
+insmod all_video
+insmod gfxterm
+insmod font
+insmod png
+insmod gfxmenu
+
+if loadfont /boot/grub/fonts/unicode.pf2; then
+    set gfxterm_font=unicode
+fi
+terminal_output gfxterm
+
+if [ -f /boot/grub/themes/sable/theme.txt ]; then
+    set theme=/boot/grub/themes/sable/theme.txt
+fi
+
 menuentry "Sable Linux Live (KDE Plasma)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} quiet splash
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} user-password=${LIVE_USER} hostname=${LIVE_HOSTNAME} quiet
     initrd /live/initrd.img
 }
 
 menuentry "Sable Linux Live (Safe Graphics / nomodeset)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} nomodeset
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} user-password=${LIVE_USER} hostname=${LIVE_HOSTNAME} nomodeset
     initrd /live/initrd.img
 }
 
 menuentry "Sable Linux Live (Copy to RAM / toram)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet splash
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} user-password=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet
     initrd /live/initrd.img
 }
 
 menuentry "Sable Linux Live (DEBUG: Verbose + Serial)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} debug earlyprintk=vga console=tty0 console=ttyS0,115200
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} user-password=${LIVE_USER} hostname=${LIVE_HOSTNAME} debug earlyprintk=vga console=tty0 console=ttyS0,115200
     initrd /live/initrd.img
 }
 GRUBEOF

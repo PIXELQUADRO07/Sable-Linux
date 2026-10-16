@@ -38,7 +38,7 @@ Sable Linux combines:
                          │
               ┌──────────┴──────────┐
               │                     │
-      sable-0.5.0.iso           sable.img
+      sable-0.6.0.iso           sable.img
       (Release Live ISO)         (Dev Disk)
               │                     │
            QEMU / Hardware       QEMU Dev
@@ -47,7 +47,7 @@ Sable Linux combines:
 ## Project identity
 
 - Name: `Sable Linux`
-- Version: `0.5.0`
+- Version: `0.6.0`
 - Codename: `Nightfall`
 - Architecture: `amd64`
 - Base: `Debian 13 (Trixie)`
@@ -76,7 +76,7 @@ sudo ./build.sh --iso
 ```
 
 Command options:
-- `--iso`: Build the hybrid live ISO (`build/sable-0.5.0-live-amd64.iso`, default release artifact).
+- `--iso`: Build the hybrid live ISO (`build/sable-0.6.0-live-amd64.iso`, default release artifact).
 - `--image`: Optionally generate the raw development disk image (`build/sable.img`).
 - `--clean`: Wipe rootfs and rebuild from scratch.
 

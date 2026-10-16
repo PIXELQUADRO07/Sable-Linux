@@ -60,7 +60,7 @@ Unlike shell configuration files, package lists use plain text `.list` files (`c
 |---|---|---|
 | `SABLE_NAME` | `"Sable Linux"` | Official operating system name |
 | `SABLE_ID` | `"sable"` | FHS-compliant identifier for `/etc/os-release` |
-| `SABLE_VERSION` | `"0.5.0"` | Current semantic version |
+| `SABLE_VERSION` | `"0.6.0"` | Current semantic version |
 | `SABLE_CODENAME` | `"Nightfall"` | Release codename |
 | `SABLE_URL` | `"https://github.com/..."` | Project repository URL |
 | `DEBIAN_SUITE` | `"trixie"` | Upstream Debian suite (13) |

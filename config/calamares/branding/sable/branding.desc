@@ -4,10 +4,10 @@ componentName: sable
 strings:
     productName:         Sable Linux
     shortProductName:    Sable
-    version:             0.5.0
-    shortVersion:        0.5
-    versionedName:       Sable Linux 0.5.0
-    shortVersionedName:  Sable 0.5
+    version:             0.6.0
+    shortVersion:        0.6
+    versionedName:       Sable Linux 0.6.0
+    shortVersionedName:  Sable 0.6
     bootloaderEntryName: Sable
     productUrl:          https://github.com/PIXELQUADRO07/Sable-Linux
     supportUrl:          https://github.com/PIXELQUADRO07/Sable-Linux/issues

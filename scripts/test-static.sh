@@ -18,7 +18,7 @@ check() {
 }
 
 VERSION="$(sed -n 's/^SABLE_VERSION="\(.*\)"/\1/p' "${ROOT}/config/sable.conf")"
-check "sable.conf version is 0.5.x" bash -c "[[ '${VERSION}' == 0.5.* ]]"
+check "sable.conf version is 0.6.x" bash -c "[[ '${VERSION}' == 0.6.* ]]"
 check "README mentions ${VERSION}" grep -q "${VERSION}" "${ROOT}/README.md"
 check "README documents --iso" grep -q -- "--iso" "${ROOT}/README.md"
 check "roadmap mentions Calamares modules" grep -q "Calamares" "${ROOT}/docs/roadmap.md"

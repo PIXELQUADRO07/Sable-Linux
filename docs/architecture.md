@@ -46,7 +46,7 @@ To comply with FHS and Debian conventions without scattering customization setti
 - **Standard Debian/Upstream configurations:** remain in canonical paths (`/etc/systemd/`, `/etc/network/`, `/etc/apt/`).
 - **Sable Dedicated Namespace (`/etc/sable/`):**
   - `/etc/sable/release`: Release name (`Sable Linux`).
-  - `/etc/sable/version`: Semantic version (`0.5.0`).
+  - `/etc/sable/version`: Semantic version (`0.6.0`).
   - `/etc/sable/codename`: Release codename (`Nightfall`).
   - `/etc/sable/build-info`: Timestamp, build host, and compiled profile.
   - `/etc/sable/config/`: Snapshot of the system configuration used during build.

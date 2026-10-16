@@ -158,7 +158,7 @@ cat << "EOF"
  |____/ \__,_|_.__/|_|\___| |_____|_|_| |_|\__,_/_/\_\
 EOF
 echo -e "${RESET}"
-echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.5.0} (${SABLE_CODENAME:-Nightfall})"
+echo -e "${BOLD}Target System:${RESET}  ${SABLE_NAME:-Sable Linux} ${SABLE_VERSION:-0.6.0} (${SABLE_CODENAME:-Nightfall})"
 echo -e "${BOLD}Profile:${RESET}        ${SABLE_PROFILE:-desktop} | Arch: ${DEBIAN_ARCH:-amd64} | Suite: ${DEBIAN_SUITE:-trixie}"
 echo -e "${BOLD}Logs:${RESET}           ${BUILD_LOG}"
 

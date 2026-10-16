@@ -19,7 +19,7 @@
                                   │
                         ┌─────────┴─────────┐
                         │                   │
-                sable-0.5.0.iso         sable.img
+                sable-0.6.0.iso         sable.img
                 (Release Live ISO)      (Dev Disk Image)
                         │                   │
                  QEMU / Hardware         QEMU Dev
@@ -31,7 +31,7 @@ Standard automated build workflow:
 git clone https://github.com/PIXELQUADRO07/Sable-Linux.git
 cd Sable-Linux
 sudo ./build.sh
-# Generates release artifact: build/sable-0.5.0-live-amd64.iso
+# Generates release artifact: build/sable-0.6.0-live-amd64.iso
 ```
 
 ---

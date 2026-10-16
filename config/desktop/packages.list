@@ -6,6 +6,7 @@
 
 # Desktop Environment & Display Manager
 kde-plasma-desktop
+kwin-x11
 sddm
 plasma-nm
 kde-config-sddm

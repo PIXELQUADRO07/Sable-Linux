@@ -152,7 +152,7 @@ mkdir -p "${LIVE_ROOT}/etc/sddm.conf.d"
 cat > "${LIVE_ROOT}/etc/sddm.conf.d/zz-sable-live-autologin.conf" << EOS
 [Autologin]
 User=${LIVE_USER}
-Session=plasma
+Session=plasmax11
 Relogin=false
 EOS
 

@@ -1,0 +1,13 @@
+Source: sable-branding
+Section: graphics
+Priority: optional
+Maintainer: Sable Linux Project <https://github.com/PIXELQUADRO07/Sable-Linux>
+Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 13)
+
+Package: sable-branding
+Architecture: all
+Depends: ${misc:Depends}
+Description: Branding artwork, logos and icons for Sable Linux
+ This package provides the official vector logos, paw symbols,
+ distribution icons, and desktop branding for Sable Linux.

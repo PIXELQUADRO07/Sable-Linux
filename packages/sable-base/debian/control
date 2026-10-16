@@ -1,0 +1,14 @@
+Source: sable-base
+Section: admin
+Priority: standard
+Maintainer: Sable Linux Project <https://github.com/PIXELQUADRO07/Sable-Linux>
+Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 13)
+
+Package: sable-base
+Architecture: all
+Depends: ${misc:Depends}, bash, coreutils, systemd, fastfetch
+Description: Core configuration and CLI utilities for Sable Linux
+ This package contains the central distribution definitions, system
+ identity namespace (/etc/sable/), MOTD, and official CLI utilities:
+ sable-info, sable-update, and sable-config.

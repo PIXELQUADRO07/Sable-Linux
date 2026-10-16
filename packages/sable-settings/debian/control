@@ -1,0 +1,13 @@
+Source: sable-settings
+Section: x11
+Priority: optional
+Maintainer: Sable Linux Project <https://github.com/PIXELQUADRO07/Sable-Linux>
+Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 13)
+
+Package: sable-settings
+Architecture: all
+Depends: ${misc:Depends}, kde-plasma-desktop, zsh
+Description: Default desktop configuration and skel presets for Sable Linux
+ This package provides default configuration files for KDE Plasma,
+ SDDM display manager, GTK styles, and customized Zsh environment.

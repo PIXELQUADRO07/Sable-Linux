@@ -156,17 +156,19 @@ Session=plasmax11
 Relogin=false
 EOS
 
-# Installer launcher in launcher menu (removed from installed system)
-cat > "${LIVE_ROOT}/usr/share/applications/sable-install.desktop" << 'EOS'
-[Desktop Entry]
-Type=Application
-Name=Install Sable Linux
-Comment=Install Sable Linux on this computer
-Exec=sudo -E calamares
-Icon=system-software-install
-Terminal=false
-Categories=System;
-EOS
+# Live session configuration (Debian live-config)
+if [[ -f "${PROJECT_ROOT}/config/live/config.conf" ]]; then
+    mkdir -p "${LIVE_ROOT}/etc/live"
+    cp "${PROJECT_ROOT}/config/live/config.conf" "${LIVE_ROOT}/etc/live/config.conf"
+fi
+
+# Installer launcher in launcher menu & desktop (removed from installed system)
+if [[ -f "${PROJECT_ROOT}/config/live/sable-installer.desktop" ]]; then
+    mkdir -p "${LIVE_ROOT}/usr/share/applications" "${LIVE_ROOT}/etc/skel/Desktop"
+    cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/usr/share/applications/sable-installer.desktop"
+    cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
+    chmod +x "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
+fi
 
 cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
 #!/bin/bash

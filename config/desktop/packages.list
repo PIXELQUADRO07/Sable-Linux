@@ -10,7 +10,7 @@ kwin-x11
 sddm
 sddm-theme-breeze
 breeze-gtk-theme
-kde-gtk-config
+kde-config-gtk-style
 plasma-nm
 kde-config-sddm
 

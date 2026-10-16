@@ -133,7 +133,7 @@ apt-get install -y --no-install-recommends \
     rsync squashfs-tools efibootmgr dosfstools e2fsprogs ntfs-3g zstd cpio initramfs-tools
 mkdir -p /etc/initramfs-tools/conf.d
 echo "BOOT=live" > /etc/initramfs-tools/conf.d/live.conf
-apt-get install -y calamares
+apt-get install -y --no-install-recommends calamares
 EOS
 chmod +x "${LIVE_ROOT}/tmp/sable-live-setup.sh"
 chroot "${LIVE_ROOT}" /tmp/sable-live-setup.sh

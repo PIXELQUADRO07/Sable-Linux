@@ -209,7 +209,8 @@ echo " Memory: ${MEMORY}MB | Cores: ${SMP} | Serial: ${SERIAL}"
 if [[ "${FIRMWARE}" == "uefi" ]]; then
     echo " OVMF:   ${OVMF_CODE}"
 fi
-echo " Live login: live  | Dev image login: sable"
+echo " Live ISO credentials:   username 'live'  | password 'live' (passwordless sudo)"
+echo " Dev image credentials:  username 'sable' | password 'sable'"
 echo "=========================================================="
 
 exec qemu-system-x86_64 \

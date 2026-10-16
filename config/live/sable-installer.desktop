@@ -3,7 +3,7 @@ Type=Application
 Version=1.0
 Name=Install Sable Linux
 Comment=Install Sable Linux on this computer
-Exec=pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY calamares
+Exec=sudo -E calamares
 Icon=sable-logo
 Terminal=false
 Categories=System;Settings;

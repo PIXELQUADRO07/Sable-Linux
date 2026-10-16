@@ -1,0 +1,43 @@
+# ==============================================================================
+# Sable Linux — Isolated / Reproducible Build Container
+# ==============================================================================
+# Allows building Sable Linux using Podman or Docker without installing
+# build tools directly on the host machine.
+#
+# Usage:
+#   podman build -t sable-builder -f containers/Containerfile .
+#   podman run --privileged --rm -v "$(pwd):/build" sable-builder ./build.sh --iso
+# ==============================================================================
+
+FROM debian:trixie-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
+
+# Install all required host tools for the 7-stage build orchestrator
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    debootstrap \
+    squashfs-tools \
+    xorriso \
+    grub-pc-bin \
+    grub-efi-amd64-bin \
+    grub-common \
+    mtools \
+    dosfstools \
+    e2fsprogs \
+    rsync \
+    sudo \
+    zstd \
+    cpio \
+    ca-certificates \
+    curl \
+    kmod \
+    util-linux \
+    qemu-system-x86 \
+    ovmf \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+CMD ["./build.sh", "--iso"]

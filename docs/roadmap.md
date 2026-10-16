@@ -84,7 +84,7 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 | **12** | **Networking** | NetworkManager active and operational at boot | 🟢 Completed | Confirmed with ping and nmcli |
 | **13** | **OpenSSH Server** | Remote access for development | 🟡 Optional | Disabled by default in policy |
 | **14** | **KDE Plasma Desktop** | Complete `kde-standard`, `sddm`, PipeWire, Wayland, Mesa | 🟢 Completed | `scripts/desktop.sh` |
-| **15** | **Sable Desktop Styling** | Sweet dark theme, Candy icons, mouse-tracking eye plasmoid, Zsh terminal with matrix green palette, git commit counter, and right-aligned clock | 🟢 Completed | `config/desktop/` and `scripts/desktop.sh` |
+| **15** | **Sable Desktop Styling** | Breeze Dark theme, Breeze-dark icons, Breeze cursors, lightweight system monitor applets, custom Zsh with matrix green palette, git commit counter, and right-aligned clock | 🟢 Completed | `config/desktop/` and `scripts/desktop.sh` |
 | **16** | **Complete Branding** | Official high-res SVG logos, paw icons, small ASCII art for `fastfetch` and login banners | 🟢 Completed | `config/branding/assets/` |
 | **17** | **Sable Debian Packages** | Native `.deb` packages (`sable-base`, `sable-branding`, `sable-settings`) | 🟡 In Progress | Directory skeletons created in `packages/` |
 | **18** | **Sable CLI Utilities** | Custom system tools: `sable-info`, `sable-update`, `sable-config` | ⬜ To do | Scheduled for Milestone 18 |
@@ -108,14 +108,15 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 1. **Debian 13 (Trixie) Base Engine**: Complete bootstrap, chroot management, kernel, and GRUB.
 2. **System Branding**: Full identity registered (`/etc/sable/`), official vector SVGs (`sable-linux-logo.svg`, `sable-paw-symbol.svg`, `sable-paw-symbol-inverted.svg`), and compact ASCII paw art tested and formatted for `fastfetch`.
 3. **KDE Plasma & Custom Environment**:
-   - KDE Plasma desktop suite with SDDM display manager.
-   - Sweet dark color scheme, Utterly-Round-Dark window decorations.
-   - Candy icon theme and cursor theme.
-   - Mouse-following eyes panel widget (`luisbocanegra.cursor.eyes`) alongside memory and CPU core load indicators.
+   - KDE Plasma desktop suite with SDDM display manager, defaulting to QEMU-safe X11 session (`plasmax11`) with full Wayland support available.
+   - Breeze Dark color scheme, Breeze window decorations, Breeze-dark icon theme, and Breeze cursor theme.
+   - Fixed GTK3/GTK4 style integration via `kde-config-gtk-style` and complete window decoration SVG assets.
+   - Stable system monitor applets (CPU core and memory usage) without third-party missing widget dependencies.
    - Custom Zsh environment with matrix green colorscheme, git commit counter, real-time typing animation (`zsh-syntax-highlighting` + `zsh-autosuggestions`), and right-hand clock.
 4. **Live System & Installer**:
    - Hybrid BIOS/UEFI bootable ISO generator using `grub2-mkrescue` and `mksquashfs`.
-   - Calamares installer configured with branded slides, system installation stages, and optional netinstall software categories (Office, Development, Cybersecurity tools).
+   - Calamares installer configured with `sable` branding, system installation stages (`removeuser`, cleanup), and optional netinstall software categories (Office, Development, Cybersecurity tools).
+   - Dedicated Plymouth `sable` boot splash integration with `quiet splash` in GRUB.
 5. **Master Orchestrator**:
    - `./build.sh` master pipeline with incremental execution, progress tracking, and error logging.
    - Live ISO detection bug resolved for Debian 13 microcode-prepended initrds.

@@ -217,30 +217,7 @@ if [[ -f "${CONFIG_DIR}/base/hardening.conf" ]]; then
     chmod 644 /etc/sysctl.d/99-sable-hardening.conf
 fi
 
-# Security tools are no longer in base (ISO size optimization): provided as
-# a netinstall group in config/calamares/modules/netinstall.yaml.
-# To install in base build: set SABLE_INSTALL_PENTEST=true in config/sable.conf
-PENTEST_PKGS=()
-if [[ "${SABLE_INSTALL_PENTEST:-false}" == "true" && -f "${CONFIG_DIR}/tools/packages-pentest.list" ]]; then
-    while IFS= read -r pkg || [[ -n "$pkg" ]]; do
-        pkg="$(echo "$pkg" | sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-        if [[ -n "$pkg" ]]; then
-            PENTEST_PKGS+=("$pkg")
-        fi
-    done < "${CONFIG_DIR}/tools/packages-pentest.list"
-fi
-
-if [[ ${#PENTEST_PKGS[@]} -gt 0 ]]; then
-    echo "Installing cybersecurity tool suite package by package..."
-    for pkg in "${PENTEST_PKGS[@]}"; do
-        if apt-cache show "$pkg" >/dev/null 2>&1; then
-            echo "  Installing $pkg..."
-            apt-get install -y --no-install-recommends "$pkg" || echo "Warning: Failed to install $pkg"
-        else
-            echo "  Skipping missing package: $pkg (not in repository)"
-        fi
-    done
-fi
+# Security tools are provided as netinstall groups in Calamares netinstall.yaml (ISO size optimization).
 
 systemctl enable apparmor 2>/dev/null || true
 systemctl enable auditd 2>/dev/null || true

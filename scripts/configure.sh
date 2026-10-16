@@ -194,7 +194,7 @@ echo "--> [Step 8] Configuring Default User..."
 USER_NAME="${SABLE_DEFAULT_USER:-sable}"
 if ! id "${USER_NAME}" >/dev/null 2>&1; then
     useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
-    echo "${USER_NAME}:${USER_NAME}" | chpasswd
+    echo "${USER_NAME}:${USER_NAME}" | chpasswd 2>/dev/null
     usermod -aG sudo "${USER_NAME}"
     # NOTE: No "chage -d 0": SDDM does not handle forced password expiration properly
     # and login would freeze. Development user: sable / sable.

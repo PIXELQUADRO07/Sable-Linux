@@ -168,6 +168,10 @@ if [[ -f "${PROJECT_ROOT}/config/live/sable-installer.desktop" ]]; then
     cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/usr/share/applications/sable-installer.desktop"
     cp "${PROJECT_ROOT}/config/live/sable-installer.desktop" "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
     chmod +x "${LIVE_ROOT}/etc/skel/Desktop/sable-installer.desktop"
+# Plymouth theme setup
+if [[ -d "${PROJECT_ROOT}/config/live/plymouth" ]]; then
+    mkdir -p "${LIVE_ROOT}/usr/share/plymouth/themes/sable"
+    cp -a "${PROJECT_ROOT}/config/live/plymouth/." "${LIVE_ROOT}/usr/share/plymouth/themes/sable/"
 fi
 
 cat > "${LIVE_ROOT}/tmp/sable-live-finish.sh" << 'EOS'
@@ -184,6 +188,10 @@ if id "$DEV_USER" >/dev/null 2>&1; then
 fi
 if id "${LIVE_USER:-live}" >/dev/null 2>&1; then
     userdel -rf "${LIVE_USER:-live}" || true
+fi
+
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    plymouth-set-default-theme -R sable 2>/dev/null || plymouth-set-default-theme sable 2>/dev/null || true
 fi
 
 update-initramfs -u -k all
@@ -261,7 +269,7 @@ set default=0
 set timeout=5
 
 menuentry "Sable Linux Live (KDE Plasma)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} quiet
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} quiet splash
     initrd /live/initrd.img
 }
 
@@ -271,7 +279,7 @@ menuentry "Sable Linux Live (Safe Graphics / nomodeset)" {
 }
 
 menuentry "Sable Linux Live (Copy to RAM / toram)" {
-    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet
+    linux /live/vmlinuz boot=live components username=${LIVE_USER} hostname=${LIVE_HOSTNAME} toram quiet splash
     initrd /live/initrd.img
 }
 

@@ -104,6 +104,20 @@ install_desktop_in_chroot() {
         fi
     } > /etc/sddm.conf.d/sable.conf
 
+    # Install Plymouth theme if available
+    PLYMOUTH_DIR="${CONFIG_DIR}/live/plymouth"
+    if [[ ! -d "${PLYMOUTH_DIR}" && -d "${CONFIG_DIR}/../live/plymouth" ]]; then
+        PLYMOUTH_DIR="${CONFIG_DIR}/../live/plymouth"
+    fi
+    if [[ -d "${PLYMOUTH_DIR}" ]]; then
+        echo "--> Installing Sable Plymouth theme..."
+        mkdir -p /usr/share/plymouth/themes/sable
+        cp -a "${PLYMOUTH_DIR}/." /usr/share/plymouth/themes/sable/
+        if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+            plymouth-set-default-theme -R sable 2>/dev/null || plymouth-set-default-theme sable 2>/dev/null || true
+        fi
+    fi
+
     echo "=========================================================="
     echo " [Milestone 15] Applying Custom Sweet Theme, Candy Icons & ZSH"
     echo "=========================================================="

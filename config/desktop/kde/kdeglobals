@@ -98,12 +98,12 @@ ForegroundVisited=179,13,191
 
 [General]
 AccentColor=184,117,220
-ColorScheme=Sweet
+ColorScheme=BreezeDark
 ColorSchemeHash=3b0b7b7f6fa70c9f360b5a78837836d8971524f3
 LastUsedCustomAccentColor=184,117,220
 
 [Icons]
-Theme=candy-icons
+Theme=breeze-dark
 
 [KDE]
 SingleClick=true

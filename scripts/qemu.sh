@@ -131,7 +131,7 @@ done
 
 KVM_OPT=()
 if [[ -w /dev/kvm ]]; then
-    KVM_OPT=("-enable-kvm")
+    KVM_OPT=("-enable-kvm" "-cpu" "host")
 fi
 
 BIOS_OPT=()

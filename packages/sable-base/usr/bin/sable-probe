@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Sable Linux — Hardware Probe & Diagnostics Utility (sable-probe)
+# ==============================================================================
+# Verifies GPU acceleration (Intel Arc / AMD / VirtIO), Audio (PipeWire),
+# Wi-Fi / Networking, Input devices, and Battery / Power management.
+# ==============================================================================
+set -Eeuo pipefail
+
+VERSION="0.6.0"
+
+show_help() {
+    cat << EOF
+Usage: sable-probe [OPTIONS]
+
+Options:
+  -j, --json     Output diagnostics report in JSON format
+  -v, --version  Show version of sable-probe
+  -h, --help     Show this help message
+
+Probes hardware devices, GPU drivers, PipeWire audio, and network controllers.
+EOF
+}
+
+OUTPUT_FORMAT="text"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -j|--json) OUTPUT_FORMAT="json"; shift ;;
+        -v|--version) echo "sable-probe v${VERSION}"; exit 0 ;;
+        -h|--help) show_help; exit 0 ;;
+        *) echo "Unknown option: $1" >&2; show_help >&2; exit 1 ;;
+    esac
+done
+
+BOLD="\033[1m"
+RESET="\033[0m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+CYAN="\033[36m"
+RED="\033[31m"
+DIM="\033[2m"
+
+if [[ ! -t 1 ]]; then
+    BOLD=""
+    RESET=""
+    GREEN=""
+    YELLOW=""
+    CYAN=""
+    RED=""
+    DIM=""
+fi
+
+# 1. GPU Probe
+GPU_NAME="Unknown"
+GPU_DRIVER="None"
+GPU_ACCEL="No"
+
+if command -v lspci >/dev/null 2>&1; then
+    GPU_LINE="$(lspci -nn | grep -E -i "VGA compatible controller|3D controller|Display controller" | head -n1 || true)"
+    if [[ -n "${GPU_LINE}" ]]; then
+        GPU_NAME="$(echo "${GPU_LINE}" | sed -E 's/.*: (.*)/\1/')"
+    fi
+fi
+
+if [[ -d /sys/class/drm ]]; then
+    for card in /sys/class/drm/card[0-9]; do
+        [[ -d "${card}/device/driver" ]] || continue
+        GPU_DRIVER="$(basename "$(readlink "${card}/device/driver")")"
+        break
+    done
+fi
+
+if [[ -e /dev/dri/renderD128 ]]; then
+    GPU_ACCEL="Direct Rendering Active (/dev/dri/renderD128)"
+elif [[ -e /dev/dri/card0 ]]; then
+    GPU_ACCEL="Kernel Modesetting Active (/dev/dri/card0)"
+fi
+
+# 2. Audio Probe
+AUDIO_SERVER="None"
+if pgrep -x "pipewire" >/dev/null 2>&1; then
+    AUDIO_SERVER="PipeWire (Active)"
+    if pgrep -x "wireplumber" >/dev/null 2>&1; then
+        AUDIO_SERVER+=" + WirePlumber"
+    fi
+elif pgrep -x "pulseaudio" >/dev/null 2>&1; then
+    AUDIO_SERVER="PulseAudio (Active)"
+elif [[ -d /proc/asound ]]; then
+    AUDIO_SERVER="ALSA Direct"
+fi
+
+# 3. Network Probe
+NET_DEVICES=()
+WIFI_FOUND="No"
+if [[ -d /sys/class/net ]]; then
+    for iface in /sys/class/net/*; do
+        [[ -e "${iface}" ]] || continue
+        dev="$(basename "${iface}")"
+        [[ "${dev}" == "lo" ]] && continue
+        if [[ -d "${iface}/wireless" || -e "${iface}/phy80211" ]]; then
+            NET_DEVICES+=("${dev} (Wi-Fi)")
+            WIFI_FOUND="Yes"
+        else
+            NET_DEVICES+=("${dev} (Ethernet/Virtual)")
+        fi
+    done
+fi
+
+# 4. Battery / Power
+BATTERY_STATUS="Not Present / AC Powered"
+if [[ -d /sys/class/power_supply ]]; then
+    for bat in /sys/class/power_supply/BAT*; do
+        [[ -d "${bat}" ]] || continue
+        status="$(cat "${bat}/status" 2>/dev/null || echo "Unknown")"
+        capacity="$(cat "${bat}/capacity" 2>/dev/null || echo "0")"
+        BATTERY_STATUS="$(basename "${bat}"): ${capacity}% (${status})"
+        break
+    done
+fi
+
+# 5. Output
+if [[ "${OUTPUT_FORMAT}" == "json" ]]; then
+    python3 - << EOF
+import json
+data = {
+    "gpu": {
+        "device": "${GPU_NAME}",
+        "driver": "${GPU_DRIVER}",
+        "acceleration": "${GPU_ACCEL}"
+    },
+    "audio": {
+        "server": "${AUDIO_SERVER}"
+    },
+    "network": {
+        "wifi": "${WIFI_FOUND}",
+        "interfaces": $(python3 -c "import json, sys; print(json.dumps('${NET_DEVICES[*]}'.split() if '${NET_DEVICES[*]}' else []))")
+    },
+    "power": {
+        "battery": "${BATTERY_STATUS}"
+    }
+}
+print(json.dumps(data, indent=2))
+EOF
+    exit 0
+fi
+
+echo -e "${CYAN}${BOLD}🐾 Sable Linux — Hardware Diagnostics Probe${RESET}"
+echo -e "${DIM}------------------------------------------------------------${RESET}"
+echo -e " ${BOLD}Graphics (GPU):${RESET}      ${GPU_NAME}"
+echo -e " ${BOLD}Kernel Driver:${RESET}       ${GREEN}${GPU_DRIVER}${RESET}"
+echo -e " ${BOLD}Acceleration:${RESET}        ${GPU_ACCEL}"
+echo -e "${DIM}------------------------------------------------------------${RESET}"
+echo -e " ${BOLD}Audio Plumbing:${RESET}      ${GREEN}${AUDIO_SERVER}${RESET}"
+echo -e "${DIM}------------------------------------------------------------${RESET}"
+echo -e " ${BOLD}Network Devices:${RESET}     ${NET_DEVICES[*]:-None}"
+echo -e " ${BOLD}Wi-Fi Controller:${RESET}    ${WIFI_FOUND}"
+echo -e "${DIM}------------------------------------------------------------${RESET}"
+echo -e " ${BOLD}Power Management:${RESET}    ${BATTERY_STATUS}"
+echo -e "${DIM}------------------------------------------------------------${RESET}"

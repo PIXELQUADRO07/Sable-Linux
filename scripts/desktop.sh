@@ -105,29 +105,8 @@ install_desktop_in_chroot() {
     } > /etc/sddm.conf.d/sable.conf
 
     echo "=========================================================="
-    echo " [Milestone 15] Applying Custom Sweet Theme, Candy Icons & ZSH"
+    echo " [Milestone 15] Applying Sable Desktop Customizations & Zsh"
     echo "=========================================================="
-
-    # 1. Optional third-party themes (off by default — they bloat the squashfs)
-    if [[ "${SABLE_INSTALL_THIRD_PARTY_THEMES:-false}" == "true" && -d "${CONFIG_DIR}/desktop/share" ]]; then
-        echo "--> Installing optional third-party themes (candy-icons, aurorae, plasmoids)..."
-        if [[ -d "${CONFIG_DIR}/desktop/share/color-schemes" ]]; then
-            mkdir -p /usr/share/color-schemes
-            cp -a "${CONFIG_DIR}/desktop/share/color-schemes/." /usr/share/color-schemes/
-        fi
-        if [[ -d "${CONFIG_DIR}/desktop/share/icons" ]]; then
-            mkdir -p /usr/share/icons
-            cp -a "${CONFIG_DIR}/desktop/share/icons/." /usr/share/icons/
-        fi
-        if [[ -d "${CONFIG_DIR}/desktop/share/aurorae" ]]; then
-            mkdir -p /usr/share/aurorae
-            cp -a "${CONFIG_DIR}/desktop/share/aurorae/." /usr/share/aurorae/
-        fi
-        if [[ -d "${CONFIG_DIR}/desktop/share/plasma/plasmoids" ]]; then
-            mkdir -p /usr/share/plasma/plasmoids
-            cp -a "${CONFIG_DIR}/desktop/share/plasma/plasmoids/." /usr/share/plasma/plasmoids/
-        fi
-    fi
 
     # 2. Install Konsole profiles and color schemes
     mkdir -p /usr/share/konsole /etc/skel/.local/share/konsole

@@ -36,10 +36,11 @@ setopt HIST_IGNORE_DUPS
 # Interactive ASCII Banner on launch
 if [[ -o interactive ]] && [[ -z "${SABLE_BANNER_SHOWN:-}" ]]; then
     export SABLE_BANNER_SHOWN=1
-    if [[ -f /usr/share/sable/assets/ascii-paw-small.txt ]]; then
+        local s_ver="0.6.0"
+        [[ -f /etc/sable/version ]] && s_ver="$(cat /etc/sable/version)"
         echo -ne "\033[32m"
         cat /usr/share/sable/assets/ascii-paw-small.txt
-        echo -e "\033[1;32m  🐾 Sable Linux 0.5.0 Nightfall \033[0m"
+        echo -e "\033[1;32m  🐾 Sable Linux ${s_ver} Nightfall \033[0m"
         echo
     fi
 fi

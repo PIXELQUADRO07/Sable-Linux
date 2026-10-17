@@ -38,7 +38,7 @@ install_desktop_in_chroot() {
             fi
         done < "${DESKTOP_LIST}"
     else
-        PKGS=(kde-plasma-desktop sddm plasma-nm dolphin konsole firefox-esr partitionmanager zsh pipewire pipewire-audio wireplumber xwayland libgl1-mesa-dri fonts-dejavu-core fonts-noto-core plymouth)
+        PKGS=(kde-plasma-desktop sddm plasma-nm dolphin konsole firefox-esr partitionmanager zsh pipewire pipewire-audio wireplumber xwayland libgl1-mesa-dri fonts-dejavu-core fonts-noto-core)
     fi
 
     echo "--> Updating APT package index..."

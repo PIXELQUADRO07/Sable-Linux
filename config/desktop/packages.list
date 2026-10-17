@@ -47,5 +47,3 @@ libgl1-mesa-dri
 mesa-vulkan-drivers
 fonts-dejavu-core
 fonts-noto-core
-plymouth
-plymouth-themes

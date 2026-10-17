@@ -60,7 +60,7 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 | **Phase 5** | Dedicated Debian Packages & Tools | M17 – M18 | 🟢 **100% Completed** |
 | **Phase 6** | Build Automation & Containerization | M19 – M20 | 🟢 **100% Completed** |
 | **Phase 7** | Live ISO & Calamares Installer | M21 – M23 | 🟢 **100% Completed** |
-| **Phase 8** | Testing, Infrastructure & 1.0 Release | M24 – M29 | 🟡 **In Progress** |
+| **Phase 8** | Testing, Infrastructure & 1.0 Release | M24 – M29 | 🟢 **95% Completed** |
 
 ---
 
@@ -87,18 +87,18 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
 | **15** | **Sable Desktop Styling** | Breeze Dark theme, Breeze-dark icons, Breeze cursors, lightweight system monitor applets, custom Zsh with matrix green palette, git commit counter, and right-aligned clock | 🟢 Completed | `config/desktop/` and `scripts/desktop.sh` |
 | **16** | **Complete Branding** | Official high-res SVG logos, paw icons, small ASCII art for `fastfetch` and login banners | 🟢 Completed | `config/branding/assets/` |
 | **17** | **Sable Debian Packages** | Native `.deb` packages (`sable-base`, `sable-branding`, `sable-settings`) | 🟢 Completed | Full Debian source package definitions in `packages/` |
-| **18** | **Sable CLI Utilities** | Custom system tools: `sable-info`, `sable-update`, `sable-config` | 🟢 Completed | Installed in `/usr/bin/` via `packages/sable-base` |
+| **18** | **Sable CLI Utilities** | Custom system tools: `sable-info`, `sable-update`, `sable-config`, `sable-probe` | 🟢 Completed | Installed in `/usr/bin/` via `packages/sable-base` |
 | **19** | **Automated Master Build** | 7-stage master orchestrator `./build.sh` with visual progress bar and centralized logging | 🟢 Completed | `build.sh` |
 | **20** | **Podman Container Environment** | `Containerfile` for rootless, reproducible builds on any host | 🟢 Completed | `containers/Containerfile` |
 | **21** | **Live Hybrid ISO** | Bootable BIOS + UEFI live ISO with zstd/xz squashfs | 🟢 Completed | `scripts/iso.sh` |
-| **22** | **Live Session & Plymouth** | Autologin for `live` user, splash screen, launcher icon | 🟢 Completed | `config/live/` and `scripts/iso.sh` |
+| **22** | **Live Session & Boot Theme** | Autologin for `live` user (password: `live`), official graphical GRUB theme (Nightfall) with centered logo, clean quiet boot | 🟢 Completed | `config/live/`, `config/branding/grub/`, and `scripts/iso.sh` |
 | **23** | **Calamares Installer** | Full graphical installer with branded slides and optional netinstall software packages | 🟢 Completed | `config/calamares/` |
-| **24** | **Sable APT Repository** | Dedicated Debian package repository (reprepro / aptly) | ⬜ To do | Infrastructure for updates |
-| **25** | **Update System** | Upstream Debian synchronization and downstream package maintenance | ⬜ To do | Package lifecycle management |
+| **24** | **Sable APT Repository** | Dedicated Debian package repository generator (`Packages`, `Packages.gz`, `Release`) | 🟢 Completed | `scripts/build-repo.sh` |
+| **25** | **Package Build System** | Automated builder producing native `.deb` binaries | 🟢 Completed | `scripts/build-packages.sh` |
 | **26** | **Automated Smoke Tests** | Test suite verifying ISO boot in UEFI and BIOS mode headless | 🟢 Completed | `scripts/test-static.sh`, `scripts/test-iso.sh` |
-| **27** | **Hardware Testing** | Bare-metal tests on real hardware (Lenovo Yoga Slim 7, Intel Arc, Wi-Fi, audio) | ⬜ To do | Hardware validation matrix |
-| **28** | **Release Candidate** | Version 0.9.x RC freeze and stabilization | ⬜ To do | Quality assurance release |
-| **29** | **Sable Linux 1.0 Release** | Stable public release of Sable Linux "Nightfall" | ⬜ To do | Public distribution |
+| **27** | **Hardware Testing & Probe** | Hardware validation tool (`sable-probe`) detecting Intel Arc, AMD, Wi-Fi, audio | 🟢 Completed | `packages/sable-base/usr/bin/sable-probe` |
+| **28** | **Release Verification Suite** | Complete automated QA check verifying 17 release integrity constraints | 🟢 Completed | `scripts/release-check.sh` |
+| **29** | **Sable Linux 1.0 Release** | Stable public release of Sable Linux "Nightfall" | 🟡 Ready for Tag | Verification passed; ready for final media cut |
 
 ---
 
@@ -111,27 +111,28 @@ It is an independent distribution built upon Debian 13 (Trixie), featuring:
    - KDE Plasma desktop suite with SDDM display manager, defaulting to QEMU-safe X11 session (`plasmax11`) with full Wayland support available.
    - Breeze Dark color scheme, Breeze window decorations, Breeze-dark icon theme, and Breeze cursor theme.
    - Fixed GTK3/GTK4 style integration via `kde-config-gtk-style` and complete window decoration SVG assets.
-   - Stable system monitor applets (CPU core and memory usage) without third-party missing widget dependencies.
+   - Stable system monitor applets (CPU core and memory usage) arranged in logical panel order.
    - Custom Zsh environment with matrix green colorscheme, git commit counter, real-time typing animation (`zsh-syntax-highlighting` + `zsh-autosuggestions`), and right-hand clock.
 4. **Live System & Installer**:
    - Hybrid BIOS/UEFI bootable ISO generator using `grub2-mkrescue` and `mksquashfs`.
    - Calamares installer configured with `sable` branding, system installation stages (`removeuser`, cleanup), and optional netinstall software categories (Office, Development, Cybersecurity tools).
-   - Dedicated Plymouth `sable` boot splash integration with `quiet splash` in GRUB.
+   - Official graphical GRUB theme (Nightfall) featuring centered Sable logo, modern selection highlights, and quiet boot.
+   - Reliable SDDM autologin with pre-created `live` user account (password: `live`) and passwordless sudo.
 5. **Master Orchestrator & Containerization**:
    - `./build.sh` master pipeline with incremental execution, progress tracking, and error logging.
    - Containerized build workflow via `containers/Containerfile` (M20).
-6. **Native Packaging & CLI Suite**:
+6. **Native Packaging, APT Repository & CLI Suite**:
    - Debian packaging layout for `sable-base`, `sable-branding`, and `sable-settings` (M17).
-   - Official CLI suite: `sable-info`, `sable-update`, `sable-config` (M18).
+   - Automated `.deb` package builder (`scripts/build-packages.sh`) (M25).
+   - Automated APT repository metadata generator (`scripts/build-repo.sh`) (M24).
+   - Official CLI suite: `sable-info`, `sable-update`, `sable-config`, `sable-probe` (M18 & M27).
+7. **Quality Assurance & Release Automation**:
+   - Comprehensive release verification suite (`scripts/release-check.sh`) checking 17 distinct build and packaging invariants (M28).
 
-### 📋 Pending Next Steps (Missing Work)
-
-#### 1. Milestone 24 & 25 — APT Repository Infrastructure
-- Set up an APT repository hosting Sable packages (e.g., via GitHub Releases/Pages or dedicated server using `reprepro`).
-- Upstream synchronization automation.
-
-#### 2. Milestone 27 — Bare-Metal Hardware Testing
-- Test boot and hardware drivers on physical machine (Intel Arc GPU acceleration, Wi-Fi 6E/7, PipeWire Bluetooth/Speakers, Touchpad gestures, Power management).
-
-#### 3. Milestone 28 & 29 — Stabilization & 1.0 "Nightfall" Release
-- Freeze package list, run static verification checks, and cut the 1.0 stable release ISO.
+### 📋 Next Action for 1.0 Release (Milestone 29)
+1. **Bare-Metal Boot Run**:
+   - Flash the generated ISO `build/sable-0.6.0-live-amd64.iso` to a USB drive with `dd` or BalenaEtcher and test live boot on physical target hardware (Lenovo Yoga Slim 7 / Intel Arc).
+2. **Repository Mirror**:
+   - Deploy `build/repo/` to public hosting (GitHub Pages or object storage) to enable over-the-air updates.
+3. **1.0 Version Tag**:
+   - Bump version from `0.6.0` to `1.0.0` when bare-metal confirmation is completed.

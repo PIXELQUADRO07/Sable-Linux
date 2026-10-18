@@ -209,29 +209,35 @@ update-initramfs -u -k all
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
 
 # Validate live-boot is included in initrd.
-# Debian 13 uses microcode-prepended initrds (two concatenated CPIO archives).
-# lsinitramfs by default only lists the first archive (microcode), so we use
-# unmkinitramfs --list to inspect the main archive where live-boot hooks live.
+# Debian uses microcode-prepended initrds (concatenated CPIO archives).
+# We check via unmkinitramfs --list and lsinitramfs to inspect the actual archive.
 LIVE_FOUND=false
 if command -v unmkinitramfs >/dev/null 2>&1; then
-    if unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -q 'usr/lib/live'; then
+    if unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
         LIVE_FOUND=true
     fi
 fi
-# Fallback: check that the hook and conf file exist (guarantees inclusion)
-if [[ "${LIVE_FOUND}" == "false" ]]; then
-    if [[ -f /usr/share/initramfs-tools/hooks/live ]] && \
-       [[ -f /etc/initramfs-tools/conf.d/live.conf ]] && \
-       grep -q 'BOOT=live' /etc/initramfs-tools/conf.d/live.conf 2>/dev/null; then
+if [[ "${LIVE_FOUND}" == "false" ]] && command -v lsinitramfs >/dev/null 2>&1; then
+    if lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
         LIVE_FOUND=true
     fi
 fi
+
 if [[ "${LIVE_FOUND}" == "false" ]]; then
-    echo "ERROR: live-boot NOT present in initrd of ${KVER}: ISO will not boot." >&2
-    echo "Checked: unmkinitramfs --list, /usr/share/initramfs-tools/hooks/live, /etc/initramfs-tools/conf.d/live.conf" >&2
+    echo "Warning: live-boot not detected in initrd on first pass. Attempting explicit regeneration..."
+    update-initramfs -u -k "${KVER}"
+    if command -v unmkinitramfs >/dev/null 2>&1 && unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
+        LIVE_FOUND=true
+    elif command -v lsinitramfs >/dev/null 2>&1 && lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
+        LIVE_FOUND=true
+    fi
+fi
+
+if [[ "${LIVE_FOUND}" == "false" ]]; then
+    echo "ERROR: live-boot NOT verified inside /boot/initrd.img-${KVER}. ISO live-boot will fail." >&2
     exit 1
 fi
-echo "OK: live-boot validated in initrd (${KVER})"
+echo "OK: live-boot verified inside initrd (${KVER})"
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /tmp/sable-live-*.sh /root/.bash_history

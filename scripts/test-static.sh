@@ -42,6 +42,16 @@ check "desktop list uses kde-plasma-desktop" grep -q "kde-plasma-desktop" "${ROO
 check "desktop list has firefox-esr" grep -q "firefox-esr" "${ROOT}/config/desktop/packages.list"
 check "grub list has shim-signed" grep -q "shim-signed" "${ROOT}/scripts/grub.sh"
 check "configure.sh does not install pentest suite" bash -c "! grep -q packages-pentest.list '${ROOT}/scripts/configure.sh'"
+check "sable.conf disables dev user by default" grep -q 'SABLE_CREATE_DEV_USER="false"' "${ROOT}/config/sable.conf"
+check "configure.sh checks SABLE_CREATE_DEV_USER" grep -q 'SABLE_CREATE_DEV_USER' "${ROOT}/scripts/configure.sh"
+check "shellprocess_cleanup purges live sudoers" grep -q '/etc/sudoers.d/00-live' "${ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
+check "shellprocess_cleanup purges temporary users" grep -q 'userdel -rf sable' "${ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
+check "calamares locale timezone is UTC" grep -q 'zone: "UTC"' "${ROOT}/config/calamares/modules/locale.conf"
+check "calamares netinstall has valid file:// fallback" grep -q 'file:///etc/calamares/modules/netinstall.yaml' "${ROOT}/config/calamares/modules/netinstall.conf"
+check "calamares exec sequence has shellprocess@cleanup" grep -q 'shellprocess@cleanup' "${SETTINGS}"
+check "bootstrap.sh version fallback is 0.6.0" grep -q 'SABLE_VERSION:-0.6.0' "${ROOT}/scripts/bootstrap.sh"
+check "image.sh default size is 16G" grep -q 'SABLE_IMAGE_SIZE:-16G' "${ROOT}/scripts/image.sh"
+check "mount.sh reports unmount failures" grep -q 'Failed to unmount active filesystem' "${ROOT}/scripts/mount.sh"
 
 if [[ "${FAIL}" -ne 0 ]]; then
     echo "static tests FAILED"

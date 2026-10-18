@@ -88,12 +88,16 @@ Launch the live ISO in QEMU:
 ./scripts/qemu.sh --iso
 ```
 
-Or run automated static and ISO smoke tests:
+Or run automated static, release, and ISO smoke tests:
 
 ```bash
 bash ./scripts/test-static.sh
+bash ./scripts/release-check.sh
 bash ./scripts/test-iso.sh
 ```
+
+> **Security Note:** Default development credentials are never included in the base system or release ISOs. The live session provides an ephemeral `live` user to run the installer, and the Calamares installer sets up the real user credentials chosen by the end-user.
+
 
 ### 3. Manual chroot access
 

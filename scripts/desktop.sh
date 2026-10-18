@@ -94,11 +94,20 @@ install_desktop_in_chroot() {
         echo
         echo "[General]"
         echo "DisplayServer=x11"
-        if [[ -n "${DEFAULT_SESSION:-}" ]]; then
+        # Dynamically verify session availability
+        local session_choice="${DEFAULT_SESSION:-plasmax11}"
+        if [[ ! -f "/usr/share/xsessions/${session_choice}.desktop" && ! -f "/usr/share/wayland-sessions/${session_choice}.desktop" ]]; then
+            local fallback_session
+            fallback_session="$(find /usr/share/xsessions /usr/share/wayland-sessions -maxdepth 1 -name "plasma*.desktop" 2>/dev/null | head -n1)"
+            if [[ -n "${fallback_session}" ]]; then
+                session_choice="$(basename "${fallback_session}" .desktop)"
+            fi
+        fi
+        if [[ -n "${session_choice}" ]]; then
             echo
             echo "[Autologin]"
-            echo "Session=${DEFAULT_SESSION}"
-            if [[ "${AUTOLOGIN:-false}" == "true" ]]; then
+            echo "Session=${session_choice}"
+            if [[ "${AUTOLOGIN:-false}" == "true" && "${SABLE_CREATE_DEV_USER:-false}" == "true" ]]; then
                 echo "User=${SABLE_DEFAULT_USER:-sable}"
             fi
         fi

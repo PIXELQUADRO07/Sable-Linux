@@ -69,3 +69,4 @@ Unlike shell configuration files, package lists use plain text `.list` files (`c
 | `SABLE_DESKTOP` | `"kde"` | Default desktop environment |
 | `SABLE_ENABLE_SSH` | `"false"` | SSH disabled by default for security |
 | `SABLE_ALLOW_ROOT_LOGIN` | `"false"` | Disables direct root login |
+| `SABLE_CREATE_DEV_USER` | `"false"` | Disables default credentials in release base; installer sets end-user credentials |

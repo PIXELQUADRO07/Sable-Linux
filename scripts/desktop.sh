@@ -131,34 +131,42 @@ install_desktop_in_chroot() {
         cp -a "${CONFIG_DIR}/desktop/kde/." /etc/skel/.config/
     fi
 
-    # 5. Apply configurations to user 'sable'
-    if id sable >/dev/null 2>&1; then
-        echo "--> Applying desktop configurations to user 'sable'..."
-        mkdir -p /home/sable/.config /home/sable/.local/share/konsole /home/sable/.local/share/plasma/plasmoids
-        
-        if [[ -d "${CONFIG_DIR}/desktop/kde" ]]; then
-            cp -a "${CONFIG_DIR}/desktop/kde/." /home/sable/.config/
-        fi
-        if [[ -f "${CONFIG_DIR}/desktop/zsh/zshrc" ]]; then
-            cp "${CONFIG_DIR}/desktop/zsh/zshrc" /home/sable/.zshrc
-        fi
-        if [[ -f "${CONFIG_DIR}/desktop/zsh/SableGreen.colorscheme" ]]; then
-            cp "${CONFIG_DIR}/desktop/zsh/SableGreen.colorscheme" /home/sable/.local/share/konsole/
-        fi
-        if [[ -f "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" ]]; then
-            cp "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" /home/sable/.local/share/konsole/
-        fi
-        if [[ "${SABLE_INSTALL_THIRD_PARTY_THEMES:-false}" == "true" && -d "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" ]]; then
-            cp -a "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" /home/sable/.local/share/plasma/plasmoids/
-        fi
+    # 5. Apply configurations to any existing regular users in /home
+    for udir in /home/*; do
+        [[ -d "${udir}" ]] || continue
+        u="$(basename "${udir}")"
+        [[ "${u}" == "lost+found" ]] && continue
+        if id "${u}" >/dev/null 2>&1; then
+            echo "--> Applying desktop configurations to user '${u}'..."
+            mkdir -p "${udir}/.config" "${udir}/.local/share/konsole" "${udir}/.local/share/plasma/plasmoids"
+            
+            if [[ -d "${CONFIG_DIR}/desktop/kde" ]]; then
+                cp -a "${CONFIG_DIR}/desktop/kde/." "${udir}/.config/"
+            fi
+            if [[ -f "${CONFIG_DIR}/desktop/zsh/zshrc" ]]; then
+                cp "${CONFIG_DIR}/desktop/zsh/zshrc" "${udir}/.zshrc"
+            fi
+            if [[ -f "${CONFIG_DIR}/desktop/zsh/SableGreen.colorscheme" ]]; then
+                cp "${CONFIG_DIR}/desktop/zsh/SableGreen.colorscheme" "${udir}/.local/share/konsole/"
+            fi
+            if [[ -f "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" ]]; then
+                cp "${CONFIG_DIR}/desktop/zsh/SableGreen.profile" "${udir}/.local/share/konsole/"
+            fi
+            if [[ "${SABLE_INSTALL_THIRD_PARTY_THEMES:-false}" == "true" && -d "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" ]]; then
+                cp -a "${CONFIG_DIR}/desktop/share/plasma/plasmoids/luisbocanegra.cursor.eyes" "${udir}/.local/share/plasma/plasmoids/"
+            fi
 
-        # Change default shell to zsh
-        if command -v zsh >/dev/null 2>&1; then
-            chsh -s "$(which zsh)" sable 2>/dev/null || true
-            chsh -s "$(which zsh)" root 2>/dev/null || true
-        fi
+            # Change default shell to zsh
+            if command -v zsh >/dev/null 2>&1; then
+                chsh -s "$(which zsh)" "${u}" 2>/dev/null || true
+            fi
 
-        chown -R sable:sable /home/sable
+            chown -R "${u}:${u}" "${udir}"
+        fi
+    done
+
+    if command -v zsh >/dev/null 2>&1; then
+        chsh -s "$(which zsh)" root 2>/dev/null || true
     fi
 
     echo "=========================================================="

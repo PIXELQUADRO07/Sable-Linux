@@ -7,6 +7,7 @@
 # Desktop Environment & Display Manager
 kde-plasma-desktop
 kwin-x11
+plasma-workspace-x11
 sddm
 sddm-theme-breeze
 breeze-gtk-theme

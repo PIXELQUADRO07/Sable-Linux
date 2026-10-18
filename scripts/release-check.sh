@@ -66,6 +66,11 @@ check "packages CLI tools syntax" bash -n "${PROJECT_ROOT}/packages/sable-base/u
 
 echo -e "\n${BOLD}[3/5] Running Core Static Integrity Suite...${RESET}"
 check "test-static.sh execution" "${PROJECT_ROOT}/scripts/test-static.sh"
+check "default dev user disabled" grep -q 'SABLE_CREATE_DEV_USER="false"' "${PROJECT_ROOT}/config/sable.conf"
+check "Calamares sudoers cleanup configured" grep -q '/etc/sudoers.d/00-live' "${PROJECT_ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
+check "Calamares hwclock.conf exists" test -f "${PROJECT_ROOT}/config/calamares/modules/hwclock.conf"
+check "Calamares networkcfg.conf exists" test -f "${PROJECT_ROOT}/config/calamares/modules/networkcfg.conf"
+check "Calamares localecfg.conf exists" test -f "${PROJECT_ROOT}/config/calamares/modules/localecfg.conf"
 
 echo -e "\n${BOLD}[4/5] Checking GRUB Theme Integrity...${RESET}"
 check "GRUB theme.txt exists" test -f "${PROJECT_ROOT}/config/branding/grub/themes/sable/theme.txt"

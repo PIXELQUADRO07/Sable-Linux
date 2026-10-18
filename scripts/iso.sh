@@ -148,11 +148,19 @@ if [[ -d "${PROJECT_ROOT}/config/calamares" ]]; then
 fi
 
 # SDDM autologin for live session only (removed from installed system by shellprocess_cleanup)
+LIVE_SESSION="plasmax11"
+if [[ ! -f "${LIVE_ROOT}/usr/share/xsessions/${LIVE_SESSION}.desktop" ]]; then
+    found_live_session="$(find "${LIVE_ROOT}/usr/share/xsessions" "${LIVE_ROOT}/usr/share/wayland-sessions" -maxdepth 1 -name "plasma*.desktop" 2>/dev/null | head -n1 || true)"
+    if [[ -n "${found_live_session}" ]]; then
+        LIVE_SESSION="$(basename "${found_live_session}" .desktop)"
+    fi
+fi
+
 mkdir -p "${LIVE_ROOT}/etc/sddm.conf.d"
 cat > "${LIVE_ROOT}/etc/sddm.conf.d/zz-sable-live-autologin.conf" << EOS
 [Autologin]
 User=${LIVE_USER}
-Session=plasmax11
+Session=${LIVE_SESSION}
 Relogin=false
 EOS
 

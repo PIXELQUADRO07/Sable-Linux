@@ -29,10 +29,24 @@ unmount_all() {
     for m in "${mounts[@]}"; do
         if mountpoint -q "$m" 2>/dev/null; then
             echo "  Unmounting $m"
-            umount "$m" || true
+            umount "$m" 2>/dev/null || umount -l "$m" 2>/dev/null || true
         fi
     done
-    echo "All mounts unmounted."
+
+    # Check for any remaining active mounts
+    local remaining=0
+    for m in "${mounts[@]}"; do
+        if mountpoint -q "$m" 2>/dev/null; then
+            echo "Error: Failed to unmount active filesystem: $m" >&2
+            remaining=1
+        fi
+    done
+
+    if [[ ${remaining} -ne 0 ]]; then
+        echo "Error: One or more active mounts could not be cleanly unmounted from ${ROOTFS}." >&2
+        return 1
+    fi
+    echo "All mounts successfully unmounted."
 }
 
 mount_all() {

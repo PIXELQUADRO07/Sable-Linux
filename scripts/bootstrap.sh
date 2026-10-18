@@ -50,7 +50,7 @@ fi
 mkdir -p "${ROOTFS}"
 
 echo "=========================================================="
-echo " Starting Bootstrap for ${SABLE_NAME:-Sable Linux} (${SABLE_VERSION:-0.4.0})"
+echo " Starting Bootstrap for ${SABLE_NAME:-Sable Linux} (${SABLE_VERSION:-0.6.0})"
 echo " Debian suite: ${SUITE}"
 echo " Architecture: ${ARCH}"
 echo " Mirror:       ${MIRROR}"

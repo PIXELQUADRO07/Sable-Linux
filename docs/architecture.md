@@ -59,3 +59,14 @@ To comply with FHS and Debian conventions without scattering customization setti
   Defines *how to build* the system (Debian mirror, suite, architecture, enabled profiles, packages to download).
 - **System Configuration (`/etc/` and `/etc/sable/` in rootfs):**
   Defines *how the system behaves* at runtime when booted by the user (active services, users, hostname, themes).
+
+---
+
+## 6. User Lifecycle & Security Model
+
+Sable Linux enforces strict privilege and credential separation:
+- **Base Rootfs & Release Deliverable:** Built with `SABLE_CREATE_DEV_USER="false"`. No development accounts or default credentials exist in the base system or release squashfs.
+- **Live ISO Session:** Boots an ephemeral `live` user. SDDM autologin and temporary sudoers rules are scoped strictly to the live media.
+- **Target Installation:** The Calamares installer prompts the end user for account credentials. During execution, Calamares provisions the real user and runs a final cleanup (`shellprocess@cleanup`) that purges live autologin, live sudoers entries (`/etc/sudoers.d/00-*`), and installer shortcuts.
+- **Development Disk Image (`sable.img`):** An optional raw disk image where a local development user can be provisioned for rapid iteration.
+

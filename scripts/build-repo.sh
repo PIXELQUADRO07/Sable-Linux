@@ -17,6 +17,9 @@ ORIGIN="Sable Linux"
 LABEL="Sable"
 ARCH="amd64"
 
+REPO_URI="${SABLE_REPO_URI:-https://repo.sable-linux.org/}"
+GPG_KEY="${SABLE_GPG_KEY:-}"
+
 show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS]
@@ -25,6 +28,8 @@ Options:
   -p, --packages-dir DIR  Directory with built .deb files (default: build/packages)
   -o, --output-dir DIR    Repository target directory (default: build/repo)
   -s, --suite SUITE       Debian suite name (default: trixie)
+  -u, --uri URI           Base repository URI for client .sources (default: https://repo.sable-linux.org/)
+  -k, --key KEY_ID        GPG key ID to sign Release file (InRelease & Release.gpg)
   -h, --help              Show this help message
 
 Builds an APT repository pool and metadata index.
@@ -36,6 +41,8 @@ while [[ $# -gt 0 ]]; do
         -p|--packages-dir) PACKAGES_DIR="$2"; shift 2 ;;
         -o|--output-dir) REPO_DIR="$2"; shift 2 ;;
         -s|--suite) SUITE="$2"; shift 2 ;;
+        -u|--uri) REPO_URI="$2"; shift 2 ;;
+        -k|--key) GPG_KEY="$2"; shift 2 ;;
         -h|--help) show_help; exit 0 ;;
         *) echo "Unknown option: $1" >&2; show_help >&2; exit 1 ;;
     esac
@@ -157,13 +164,34 @@ with open(release_path, "w", encoding="utf-8") as f:
 print(f"  ✓ Generated Release file at {release_path}")
 PYEOF
 
+RELEASE_FILE="${REPO_DIR}/dists/${SUITE}/Release"
+
+# Sign Release file if GPG key is specified
+if [[ -n "${GPG_KEY}" ]] && command -v gpg >/dev/null 2>&1; then
+    echo "--> Signing Release file with GPG key: ${GPG_KEY}..."
+    rm -f "${REPO_DIR}/dists/${SUITE}/InRelease" "${REPO_DIR}/dists/${SUITE}/Release.gpg"
+    gpg --default-key "${GPG_KEY}" --clearsign -o "${REPO_DIR}/dists/${SUITE}/InRelease" "${RELEASE_FILE}" || true
+    gpg --default-key "${GPG_KEY}" -abs -o "${REPO_DIR}/dists/${SUITE}/Release.gpg" "${RELEASE_FILE}" || true
+    gpg --export "${GPG_KEY}" > "${REPO_DIR}/sable-archive-keyring.gpg" 2>/dev/null || true
+    echo "  ✓ Generated InRelease and Release.gpg"
+fi
+
 # Create client source list template
 cat > "${REPO_DIR}/sable.sources" << EOF
 Types: deb
-URIs: https://repo.sable-linux.org/
+URIs: ${REPO_URI}
 Suites: ${SUITE}
 Components: main
 Signed-By: /usr/share/keyrings/sable-archive-keyring.gpg
+EOF
+
+# Create local test sources configuration (for offline / test usage)
+cat > "${REPO_DIR}/sable-local.sources" << EOF
+Types: deb
+URIs: file://${REPO_DIR}
+Suites: ${SUITE}
+Components: main
+Trusted: yes
 EOF
 
 echo

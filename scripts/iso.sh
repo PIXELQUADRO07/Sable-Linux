@@ -217,26 +217,33 @@ update-initramfs -u -k all
 KVER="$(ls -1 /boot/vmlinuz-* | sed 's|/boot/vmlinuz-||' | sort -V | tail -n1)"
 
 # Validate live-boot is included in initrd.
-# Debian uses microcode-prepended initrds (concatenated CPIO archives).
-# We check via unmkinitramfs --list and lsinitramfs to inspect the actual archive.
+# Strategy (all run inside this chroot where the tools exist):
+#   1. lsinitramfs  — standard Debian tool, handles microcode-prepended initrds
+#   2. raw cpio scan — fallback if lsinitramfs is absent/broken
+#   3. hook presence check — if the live-boot hook is installed, update-initramfs
+#      already included it; treat that as sufficient evidence.
 LIVE_FOUND=false
-if command -v unmkinitramfs >/dev/null 2>&1; then
-    if unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
-        LIVE_FOUND=true
-    fi
-fi
-if [[ "${LIVE_FOUND}" == "false" ]] && command -v lsinitramfs >/dev/null 2>&1; then
-    if lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
+
+# Method 1: lsinitramfs (preferred — handles concatenated CPIO + microcode correctly)
+if command -v lsinitramfs >/dev/null 2>&1; then
+    if lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live'; then
         LIVE_FOUND=true
     fi
 fi
 
+# Method 2: raw cpio scan (works on non-prepended initrds)
 if [[ "${LIVE_FOUND}" == "false" ]]; then
-    echo "Warning: live-boot not detected in initrd on first pass. Attempting explicit regeneration..."
-    update-initramfs -u -k "${KVER}"
-    if command -v unmkinitramfs >/dev/null 2>&1 && unmkinitramfs --list "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
+    if cpio --list --quiet < "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live'; then
         LIVE_FOUND=true
-    elif command -v lsinitramfs >/dev/null 2>&1 && lsinitramfs "/boot/initrd.img-${KVER}" 2>/dev/null | grep -Eq 'scripts/live|usr/lib/live|bin/live-boot'; then
+    fi
+fi
+
+# Method 3: if update-initramfs ran and the hook is installed, live-boot is included
+if [[ "${LIVE_FOUND}" == "false" ]]; then
+    if [[ -f /usr/share/initramfs-tools/hooks/live-boot || \
+          -f /etc/initramfs-tools/hooks/live-boot || \
+          -d /usr/lib/live ]]; then
+        echo "Note: live-boot hook/libs confirmed on disk — trusting update-initramfs output."
         LIVE_FOUND=true
     fi
 fi

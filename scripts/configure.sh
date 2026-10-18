@@ -119,6 +119,12 @@ if [[ -f "/usr/share/sable/assets/sable-paw-symbol-inverted.svg" ]]; then
 fi
 
 # Install Sable CLI utilities (sable-info, sable-update, sable-config)
+# Prefer installing pre-built Sable native Debian packages if available
+if ls /root/packages/*.deb >/dev/null 2>&1 || ls /tmp/sable-packages/*.deb >/dev/null 2>&1; then
+    echo "  Installing native Sable Debian packages via dpkg..."
+    dpkg -i /root/packages/*.deb /tmp/sable-packages/*.deb 2>/dev/null || apt-get install -y --no-install-recommends -f
+fi
+
 if [[ -d "/root/packages/sable-base/usr/bin" ]]; then
     mkdir -p /usr/bin
     cp -a /root/packages/sable-base/usr/bin/. /usr/bin/
@@ -202,16 +208,19 @@ if [[ -n "${DISABLED_SERVICES:-}" ]]; then
 fi
 
 echo "--> [Step 8] Configuring Default User..."
-USER_NAME="${SABLE_DEFAULT_USER:-sable}"
-if ! id "${USER_NAME}" >/dev/null 2>&1; then
-    useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
-    echo "${USER_NAME}:${USER_NAME}" | chpasswd 2>/dev/null
-    usermod -aG sudo "${USER_NAME}"
-    # NOTE: No "chage -d 0": SDDM does not handle forced password expiration properly
-    # and login would freeze. Development user: sable / sable.
-    echo "User '${USER_NAME}' created with sudo privileges (dev password: ${USER_NAME})."
+if [[ "${SABLE_CREATE_DEV_USER:-false}" == "true" ]]; then
+    USER_NAME="${SABLE_DEFAULT_USER:-sable}"
+    if ! id "${USER_NAME}" >/dev/null 2>&1; then
+        useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${USER_NAME}"
+        echo "${USER_NAME}:${USER_NAME}" | chpasswd 2>/dev/null
+        usermod -aG sudo "${USER_NAME}"
+        echo "Dev user '${USER_NAME}' created with sudo privileges (dev password: ${USER_NAME})."
+    else
+        echo "User '${USER_NAME}' already exists."
+    fi
 else
-    echo "User '${USER_NAME}' already exists."
+    echo "  [Security Policy] Skipping default user creation in base system."
+    echo "  The end-user account will be securely created by Calamares during installation."
 fi
 
 echo "--> [Step 9] Generating Locales..."

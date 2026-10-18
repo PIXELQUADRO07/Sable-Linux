@@ -169,6 +169,9 @@ CURRENT_STAGE=1
 draw_progress_bar 1 ${TOTAL_STAGES} "Verifying host build dependencies"
 
 REQUIRED_TOOLS=(debootstrap parted mkfs.ext4 mkfs.fat partprobe udevadm losetup truncate blkid rsync)
+if [[ "${BUILD_ISO}" == "true" ]]; then
+    REQUIRED_TOOLS+=(mksquashfs xorriso mformat)
+fi
 MISSING_TOOLS=()
 
 for tool in "${REQUIRED_TOOLS[@]}"; do
@@ -177,11 +180,17 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
     fi
 done
 
+if [[ "${BUILD_ISO}" == "true" ]]; then
+    if ! command -v grub-mkrescue >/dev/null 2>&1 && ! command -v grub2-mkrescue >/dev/null 2>&1; then
+        MISSING_TOOLS+=("grub-mkrescue/grub2-mkrescue")
+    fi
+fi
+
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
     echo -e "${RED}Error: Missing required host tools: ${MISSING_TOOLS[*]}${RESET}" | tee -a "${ERROR_LOG}"
     echo "Install them using:"
-    echo "  sudo dnf install debootstrap parted e2fsprogs dosfstools util-linux"
-    echo "  or sudo apt install debootstrap parted dosfstools util-linux e2fsprogs"
+    echo "  sudo dnf install debootstrap parted e2fsprogs dosfstools util-linux squashfs-tools xorriso mtools grub2-tools-extra"
+    echo "  or sudo apt install debootstrap parted dosfstools util-linux e2fsprogs squashfs-tools xorriso mtools grub-pc-bin grub-efi-amd64-bin"
     exit 1
 fi
 log_info "All required host tools are available."
@@ -225,8 +234,12 @@ draw_progress_bar 3 ${TOTAL_STAGES} "Configuring Sable Identity & Base System"
 if [[ "${IMAGE_ONLY}" == "true" && -f "${ROOTFS}/etc/sable/release" ]]; then
     log_info "Image-only requested. Skipping base configuration."
 else
-    log_step "Syncing configuration overlays and running configuration inside chroot..."
-    mkdir -p "${ROOTFS}/root/config" "${ROOTFS}/root/packages"
+    log_step "Building native Debian packages and syncing overlays..."
+    "${SCRIPTS_DIR}/build-packages.sh" -o "${PROJECT_ROOT}/build/packages" >> "${BUILD_LOG}" 2>&1 || true
+    mkdir -p "${ROOTFS}/tmp/sable-packages" "${ROOTFS}/root/config" "${ROOTFS}/root/packages"
+    if ls "${PROJECT_ROOT}/build/packages"/*.deb >/dev/null 2>&1; then
+        cp -f "${PROJECT_ROOT}/build/packages"/*.deb "${ROOTFS}/tmp/sable-packages/"
+    fi
     rsync -aHAX "${PROJECT_ROOT}/config/" "${ROOTFS}/root/config/"
     rsync -aHAX "${PROJECT_ROOT}/packages/" "${ROOTFS}/root/packages/"
     if ! "${SCRIPTS_DIR}/chroot.sh" /root/configure.sh >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
@@ -301,6 +314,7 @@ log_step "Performing final rootfs hygiene and cleanup..."
 chroot "${ROOTFS}" apt-get clean || true
 rm -rf "${ROOTFS}/var/lib/apt/lists/"* || true
 rm -rf "${ROOTFS}/var/cache/apt/archives/"* || true
+rm -rf "${ROOTFS}/tmp/sable-packages" || true
 rm -f "${ROOTFS}/etc/machine-id" && touch "${ROOTFS}/etc/machine-id"
 rm -rf "${ROOTFS}/root/config" "${ROOTFS}/root/configure.sh" || true
 rm -f "${ROOTFS}/etc/resolv.conf"

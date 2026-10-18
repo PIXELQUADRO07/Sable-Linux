@@ -3,7 +3,7 @@
 # Verify package names in chroot with: apt-cache show <package>
 - name: "KDE Plasma - Complete Application Suite"
   description: "Standard KDE Desktop Suite (kde-standard)"
-  selected: true
+  selected: false
   packages:
     - kde-standard
 

@@ -16,7 +16,7 @@ ROOTFS="${PROJECT_ROOT}/rootfs"
 BUILD_DIR="${PROJECT_ROOT}/build"
 IMAGE="${BUILD_DIR}/sable.img"
 MNT_DIR="${BUILD_DIR}/mnt"
-IMAGE_SIZE="${SABLE_IMAGE_SIZE:-8G}"
+IMAGE_SIZE="${SABLE_IMAGE_SIZE:-16G}"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Error: This script must be run with sudo:"
@@ -116,6 +116,21 @@ mount --bind /run "${MNT_DIR}/run"
 
 chroot "${MNT_DIR}" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=sable --removable
 chroot "${MNT_DIR}" update-grub
+
+# Provision development user in development disk image if not present
+DEV_USER="${SABLE_DEFAULT_USER:-sable}"
+if [[ "${SABLE_DEV_IMAGE_USER:-true}" == "true" ]]; then
+    if ! chroot "${MNT_DIR}" id "${DEV_USER}" >/dev/null 2>&1; then
+        echo "Provisioning development user '${DEV_USER}' in dev image..."
+        chroot "${MNT_DIR}" useradd -m -s "${SABLE_SHELL:-/bin/bash}" "${DEV_USER}"
+        echo "${DEV_USER}:${DEV_USER}" | chroot "${MNT_DIR}" chpasswd
+        chroot "${MNT_DIR}" usermod -aG sudo "${DEV_USER}"
+        if [[ -d "${MNT_DIR}/etc/skel" ]]; then
+            cp -a "${MNT_DIR}/etc/skel/." "${MNT_DIR}/home/${DEV_USER}/" 2>/dev/null || true
+            chroot "${MNT_DIR}" chown -R "${DEV_USER}:${DEV_USER}" "/home/${DEV_USER}"
+        fi
+    fi
+fi
 
 if [[ -n "${SUDO_USER:-}" && -f "${IMAGE}" ]]; then
     chown "${SUDO_USER}:${SUDO_USER}" "${IMAGE}" 2>/dev/null || true

@@ -47,6 +47,10 @@ boot_direct_kernel() {
     local log="${WORKDIR}/direct-serial.log"
     echo "--- Direct kernel+initrd, serial stdio (probes live-boot) ---"
     if [[ ! -f "${WORKDIR}/iso/vmlinuz" ]]; then
+        if [[ "${SABLE_STRICT_TESTS:-true}" == "true" ]]; then
+            echo "FAIL: could not extract /vmlinuz from ISO (xorriso missing or extraction failed) in strict mode"
+            return 1
+        fi
         echo "SKIP: no extracted kernel (xorriso missing or extraction failed)"
         return 0
     fi
@@ -104,6 +108,10 @@ boot_firmware() {
             [[ -f "${c}" ]] && { code="${c}"; break; }
         done
         if [[ -z "${code}" ]]; then
+            if [[ "${SABLE_STRICT_TESTS:-true}" == "true" ]]; then
+                echo "FAIL: no OVMF firmware found for ${kind} test in strict mode"
+                return 1
+            fi
             echo "SKIP: no OVMF firmware found for ${kind} test"
             return 0
         fi

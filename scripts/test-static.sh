@@ -45,7 +45,7 @@ check "configure.sh does not install pentest suite" bash -c "! grep -q packages-
 check "sable.conf disables dev user by default" grep -q 'SABLE_CREATE_DEV_USER="false"' "${ROOT}/config/sable.conf"
 check "configure.sh checks SABLE_CREATE_DEV_USER" grep -q 'SABLE_CREATE_DEV_USER' "${ROOT}/scripts/configure.sh"
 check "shellprocess_cleanup purges live sudoers" grep -q '/etc/sudoers.d/00-live' "${ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
-check "shellprocess_cleanup purges temporary users" grep -q 'userdel -rf sable' "${ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
+check "shellprocess_cleanup purges live user" grep -q 'userdel -rf live' "${ROOT}/config/calamares/modules/shellprocess_cleanup.conf"
 check "calamares locale timezone is UTC" grep -q 'zone: "UTC"' "${ROOT}/config/calamares/modules/locale.conf"
 check "calamares netinstall has valid file:// fallback" grep -q 'file:///etc/calamares/modules/netinstall.yaml' "${ROOT}/config/calamares/modules/netinstall.conf"
 check "calamares exec sequence has shellprocess@cleanup" grep -q 'shellprocess@cleanup' "${SETTINGS}"

@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+VERSION="0.1.0"
+PROGRAM="sable-pkg"
+
+# Messaggi colorati: i colori vengono disattivati quando l'output
+# non è diretto a un terminale o quando NO_COLOR è impostato.
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    RED=$'\033[31m'
+    GREEN=$'\033[32m'
+    YELLOW=$'\033[33m'
+    BLUE=$'\033[34m'
+    BOLD=$'\033[1m'
+    RESET=$'\033[0m'
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    BOLD=""
+    RESET=""
+fi
+
+info() {
+    printf '%s[ SABLE ]%s %s\n' "$BLUE" "$RESET" "$*"
+}
+
+success() {
+    printf '%s[ OK ]%s %s\n' "$GREEN" "$RESET" "$*"
+}
+
+warn() {
+    printf '%s[ ATTENZIONE ]%s %s\n' "$YELLOW" "$RESET" "$*" >&2
+}
+
+error() {
+    printf '%s[ ERRORE ]%s %s\n' "$RED" "$RESET" "$*" >&2
+}
+
+usage() {
+    cat <<EOF
+${BOLD}Sable Package Manager${RESET} - versione ${VERSION}
+
+Utilizzo:
+  ${PROGRAM} help
+  ${PROGRAM} version
+  ${PROGRAM} update
+  ${PROGRAM} search <termine>
+  ${PROGRAM} info <pacchetto>
+  ${PROGRAM} install <pacchetto...>
+  ${PROGRAM} remove <pacchetto...>
+  ${PROGRAM} upgrade
+  ${PROGRAM} list-installed
+
+Esempi:
+  ${PROGRAM} search firefox
+  ${PROGRAM} info curl
+  ${PROGRAM} install curl git
+  ${PROGRAM} remove curl
+EOF
+}
+
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        error "Comando richiesto non trovato: $1"
+        exit 127
+    fi
+}
+
+require_root_manager() {
+    require_command sudo
+
+    if ! sudo -v; then
+        error "Autenticazione amministrativa non riuscita."
+        exit 1
+    fi
+}
+
+require_packages() {
+    if [[ "$#" -eq 0 ]]; then
+        error "Specifica almeno un pacchetto."
+        usage >&2
+        exit 2
+    fi
+}
+
+run_apt_action() {
+    require_root_manager
+    info "Avvio del gestore pacchetti di sistema..."
+    sudo apt-get "$@"
+}
+
+main() {
+    local action="${1:-help}"
+
+    if [[ "$#" -gt 0 ]]; then
+        shift
+    fi
+
+    case "$action" in
+        help|-h|--help)
+            usage
+            ;;
+
+        version|-v|--version)
+            printf '%s %s\n' "$PROGRAM" "$VERSION"
+            ;;
+
+        update)
+            require_command apt-get
+            run_apt_action update
+            success "Indici dei repository aggiornati."
+            ;;
+
+        search)
+            require_command apt-cache
+            require_packages "$@"
+            apt-cache search -- "$@"
+            ;;
+
+        info)
+            require_command apt-cache
+            require_packages "$@"
+            apt-cache show "$@"
+            ;;
+
+        install)
+            require_command apt-get
+            require_packages "$@"
+            run_apt_action install -- "$@"
+            ;;
+
+        remove)
+            require_command apt-get
+            require_packages "$@"
+            warn "La rimozione può influire su altri pacchetti."
+            run_apt_action remove -- "$@"
+            ;;
+
+        upgrade)
+            require_command apt-get
+            run_apt_action upgrade
+            ;;
+
+        list-installed)
+            require_command dpkg-query
+            dpkg-query -W \
+                -f='${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'
+            ;;
+
+        *)
+            error "Comando sconosciuto: $action"
+            usage >&2
+            exit 2
+            ;;
+    esac
+}
+
+main "$@"

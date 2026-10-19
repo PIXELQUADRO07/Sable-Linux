@@ -1,0 +1,13 @@
+Source: sable-pkg
+Section: admin
+Priority: optional
+Maintainer: Sable Linux Project <https://github.com/PIXELQUADRO07/Sable-Linux>
+Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 13)
+
+Package: sable-pkg
+Architecture: all
+Depends: ${misc:Depends}, apt, dpkg, bash, sudo
+Description: Sable Linux package manager interface
+ A custom command-line interface for managing packages
+ on Sable Linux through APT and dpkg.

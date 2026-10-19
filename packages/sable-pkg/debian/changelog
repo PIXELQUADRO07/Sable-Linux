@@ -1,0 +1,5 @@
+sable-pkg (0.1.0-1) trixie; urgency=medium
+
+  * Initial release of sable-pkg package manager for Sable Linux.
+
+ -- Sable Linux Project <https://github.com/PIXELQUADRO07/Sable-Linux>  Mon, 20 Oct 2026 12:00:00 +0200

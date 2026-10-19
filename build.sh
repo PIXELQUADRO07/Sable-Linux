@@ -235,7 +235,10 @@ if [[ "${IMAGE_ONLY}" == "true" && -f "${ROOTFS}/etc/sable/release" ]]; then
     log_info "Image-only requested. Skipping base configuration."
 else
     log_step "Building native Debian packages and syncing overlays..."
-    "${SCRIPTS_DIR}/build-packages.sh" -o "${PROJECT_ROOT}/build/packages" >> "${BUILD_LOG}" 2>&1 || true
+    if ! "${SCRIPTS_DIR}/build-packages.sh" -o "${PROJECT_ROOT}/build/packages" >> "${BUILD_LOG}" 2> >(tee -a "${ERROR_LOG}" >> "${BUILD_LOG}"); then
+        echo -e "${RED}Package build failed.${RESET}"
+        exit 1
+    fi
     mkdir -p "${ROOTFS}/tmp/sable-packages" "${ROOTFS}/root/config" "${ROOTFS}/root/packages"
     if ls "${PROJECT_ROOT}/build/packages"/*.deb >/dev/null 2>&1; then
         cp -f "${PROJECT_ROOT}/build/packages"/*.deb "${ROOTFS}/tmp/sable-packages/"

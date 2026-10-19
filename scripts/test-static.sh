@@ -18,8 +18,9 @@ check() {
 }
 
 VERSION="$(sed -n 's/^SABLE_VERSION="\(.*\)"/\1/p' "${ROOT}/config/sable.conf")"
-check "sable.conf version is 0.6.x" bash -c "[[ '${VERSION}' == 0.6.* ]]"
+check "sable.conf defines SABLE_VERSION" bash -c "[[ -n '${VERSION}' ]]"
 check "README mentions ${VERSION}" grep -q "${VERSION}" "${ROOT}/README.md"
+check "calamares branding matches ${VERSION}" grep -q "version: *${VERSION}" "${ROOT}/config/calamares/branding/sable/branding.desc"
 check "README documents --iso" grep -q -- "--iso" "${ROOT}/README.md"
 check "roadmap mentions Calamares modules" grep -q "Calamares" "${ROOT}/docs/roadmap.md"
 
@@ -49,7 +50,7 @@ check "shellprocess_cleanup purges live user" grep -q 'userdel -rf live' "${ROOT
 check "calamares locale timezone is UTC" grep -q 'zone: "UTC"' "${ROOT}/config/calamares/modules/locale.conf"
 check "calamares netinstall has valid file:// fallback" grep -q 'file:///etc/calamares/modules/netinstall.yaml' "${ROOT}/config/calamares/modules/netinstall.conf"
 check "calamares exec sequence has shellprocess@cleanup" grep -q 'shellprocess@cleanup' "${SETTINGS}"
-check "bootstrap.sh version fallback is 0.6.0" grep -q 'SABLE_VERSION:-0.6.0' "${ROOT}/scripts/bootstrap.sh"
+check "bootstrap.sh version fallback matches SABLE_VERSION" grep -q "SABLE_VERSION:-${VERSION}" "${ROOT}/scripts/bootstrap.sh"
 check "image.sh default size is 16G" grep -q 'SABLE_IMAGE_SIZE:-16G' "${ROOT}/scripts/image.sh"
 check "mount.sh reports unmount failures" grep -q 'Failed to unmount active filesystem' "${ROOT}/scripts/mount.sh"
 
